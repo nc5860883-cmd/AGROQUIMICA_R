@@ -1,0 +1,240 @@
+
+.productos-contenedor {
+  padding: 28px;
+  color: #26352b;
+}
+
+.productos-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.productos-encabezado h1 {
+  color: #0b311e;
+  font-size: 27px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.productos-encabezado p {
+  color: #718078;
+  margin: 0;
+}
+
+.productos-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.producto-resumen-card {
+  background: #fff;
+  border: 1px solid #e2eae4;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 3px 12px #0b311e0a;
+}
+
+.producto-resumen-card span {
+  display: block;
+  color: #718078;
+  font-size: 13px;
+  margin-bottom: 9px;
+}
+
+.producto-resumen-card strong {
+  color: #0b311e;
+  font-size: 27px;
+  font-weight: 700;
+}
+
+.productos-filtros {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr 1fr;
+  gap: 15px;
+  align-items: end;
+  background: #fff;
+  border: 1px solid #e2eae4;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.productos-filtros label {
+  display: block;
+  color: #34483b;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.productos-filtros .form-control,
+.productos-filtros .form-select {
+  min-height: 42px;
+  border-color: #dce5de;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.productos-filtros .form-control:focus,
+.productos-filtros .form-select:focus {
+  border-color: #43845c;
+  box-shadow: 0 0 0 3px #43845c20;
+}
+
+.productos-resultados {
+  color: #718078;
+  font-size: 13px;
+  margin: 18px 0 12px;
+}
+
+.productos-resultados strong {
+  color: #0b311e;
+}
+
+.productos-tabla-contenedor {
+  background: #fff;
+  border: 1px solid #e2eae4;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px #0b311e0a;
+}
+
+.productos-tabla {
+  margin-bottom: 0;
+  min-width: 950px;
+}
+
+.productos-tabla thead th {
+  background: #f1f6f2;
+  color: #385343;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 15px;
+  white-space: nowrap;
+  border-bottom: 1px solid #dce7df;
+}
+
+.productos-tabla tbody td {
+  color: #45564b;
+  font-size: 13px;
+  padding: 13px 15px;
+  border-color: #edf1ee;
+}
+
+.producto-dato {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 190px;
+}
+
+.producto-dato strong {
+  display: block;
+  color: #263b2d;
+  font-size: 13px;
+}
+
+.producto-dato small {
+  display: block;
+  color: #87938b;
+  font-size: 11px;
+  margin-top: 4px;
+  max-width: 220px;
+}
+
+.producto-imagen,
+.producto-imagen-sin-foto {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.producto-imagen-sin-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #edf4ee;
+  color: #477354;
+  font-size: 21px;
+}
+
+.producto-estado {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.producto-estado-activo {
+  background: #e4f3e8;
+  color: #24713b;
+}
+
+.producto-estado-inactivo {
+  background: #f0eeee;
+  color: #777;
+}
+
+.productos-vacio {
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e2eae4;
+  border-radius: 12px;
+  padding: 55px 20px;
+}
+
+.productos-vacio h3 {
+  color: #0b311e;
+  font-size: 18px;
+}
+
+.productos-vacio p {
+  color: #829087;
+  font-size: 13px;
+}
+
+.productos-cargando {
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  color: #52705c;
+}
+
+.productos-cargando p {
+  margin: 0;
+  font-size: 14px;
+}
+
+@media (max-width: 1000px) {
+  .productos-resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .productos-filtros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .productos-contenedor {
+    padding: 16px;
+  }
+
+  .productos-encabezado h1 {
+    font-size: 22px;
+  }
+
+  .productos-resumen,
+  .productos-filtros {
+    grid-template-columns: 1fr;
+  }
+}

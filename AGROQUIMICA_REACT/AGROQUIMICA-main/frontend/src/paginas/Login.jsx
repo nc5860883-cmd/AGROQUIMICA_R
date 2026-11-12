@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from 'react'
+﻿
+import { useEffect, useState } from 'react'
 import { iniciarSesion, prepararCSRF } from '../servicios/api'
 import '../estilos/Login.css'
 
@@ -27,8 +28,13 @@ function Login() {
 
     if (!contrasena) {
       nuevosErrores.contrasena = 'Ingresá tu contraseña.'
-    } else if (contrasena.length < 8 || contrasena.length > 64 || /\s/.test(contrasena)) {
-      nuevosErrores.contrasena = 'La contraseña debe tener entre 8 y 64 caracteres y no contener espacios.'
+    } else if (
+      contrasena.length < 8 ||
+      contrasena.length > 64 ||
+      /\s/.test(contrasena)
+    ) {
+      nuevosErrores.contrasena =
+        'La contraseña debe tener entre 8 y 64 caracteres y no contener espacios.'
     }
 
     setErrores(nuevosErrores)
@@ -46,11 +52,17 @@ function Login() {
     try {
       const respuesta = await iniciarSesion(usuario.trim(), contrasena)
 
-    if (respuesta.data.redirect) {
-        window.location.href = `http://localhost:8001${respuesta.data.redirect}`
-    } else {
-      setError('No se recibió una dirección de destino.')
-    }
+      if (respuesta.data.redirect) {
+        if (respuesta.data.redirect.includes('cambiar-contrasena')) {
+          // Mantener el cambio obligatorio de contraseña en Django.
+          window.location.href = `http://localhost:8001${respuesta.data.redirect}`
+        } else {
+          // Acceder al panel principal de React.
+          window.location.href = 'http://localhost:5173/panel-principal'
+        }
+      } else {
+        setError('No se recibió una dirección de destino.')
+      }
     } catch (err) {
       if (err.response?.data?.errores) {
         setErrores(err.response.data.errores)
@@ -73,7 +85,11 @@ function Login() {
         <div className="login-presentacion">
           <span className="login-ubicacion">CERRILLOS · SALTA</span>
 
-          <h1>Agroquímica<br />del Valle</h1>
+          <h1>
+            Agroquímica
+            <br />
+            del Valle
+          </h1>
 
           <div className="login-linea"></div>
 
@@ -101,6 +117,7 @@ function Login() {
           <form onSubmit={manejarEnvio} noValidate>
             <div className="login-campo">
               <label htmlFor="usuario">Usuario</label>
+
               <input
                 id="usuario"
                 type="text"
@@ -117,8 +134,11 @@ function Login() {
                 spellCheck="false"
                 disabled={cargando}
               />
+
               {errores.usuario && (
-                <span className="login-error-campo">{errores.usuario}</span>
+                <span className="login-error-campo">
+                  {errores.usuario}
+                </span>
               )}
             </div>
 
@@ -145,14 +165,20 @@ function Login() {
                   type="button"
                   className="login-mostrar"
                   onClick={() => setMostrarContrasena(!mostrarContrasena)}
-                  aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-label={
+                    mostrarContrasena
+                      ? 'Ocultar contraseña'
+                      : 'Mostrar contraseña'
+                  }
                 >
                   {mostrarContrasena ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
 
               {errores.contrasena && (
-                <span className="login-error-campo">{errores.contrasena}</span>
+                <span className="login-error-campo">
+                  {errores.contrasena}
+                </span>
               )}
             </div>
 
@@ -162,7 +188,7 @@ function Login() {
               </div>
             )}
 
-            <a href="/recuperar/" className="login-recuperar">
+            <a href="http://localhost:8001/recuperar/" className="login-recuperar">
               ¿Olvidaste tu contraseña?
             </a>
 

@@ -617,6 +617,107 @@ def panel_principal_api(request):
     return JsonResponse(_datos_panel(usuario))
 
 
+@require_GET
+def productos_api(request):
+    """Devuelve los productos para mostrarlos en React."""
+
+    usuario = usuario_con_acceso(request, 'productos')
+
+    if not usuario:
+        estado = 403 if getattr(request, 'permiso_denegado', False) else 401
+        mensaje = (
+            'No tenés permiso para consultar productos.'
+            if estado == 403
+            else 'La sesión no está activa.'
+        )
+        return JsonResponse(
+            {'ok': False, 'error': mensaje},
+            status=estado
+        )
+
+    busqueda = request.GET.get('q', '').strip()
+    tipo_id = request.GET.get('tipo', '').strip()
+    estado_producto = request.GET.get('estado', '').strip()
+
+    productos = Productos.objects.select_related(
+        'ID_Tipo_producto',
+        'ID_Subtipo',
+        'stock'
+    ).prefetch_related(
+        'proveedores'
+    ).order_by('Nombre_producto')
+
+    if busqueda:
+        productos = productos.filter(
+            Q(Nombre_producto__icontains=busqueda)
+            | Q(Descripcion_producto__icontains=busqueda)
+            | Q(ID_Tipo_producto__Nombre_tipo_producto__icontains=busqueda)
+            | Q(ID_Subtipo__Nombre_subtipo__icontains=busqueda)
+            | Q(proveedores__nombre_proveedor__icontains=busqueda)
+        ).distinct()
+
+    if tipo_id.isdigit():
+        productos = productos.filter(ID_Tipo_producto_id=int(tipo_id))
+
+    if estado_producto in ('Activo', 'Inactivo'):
+        productos = productos.filter(Estado_producto=estado_producto)
+
+    lista_productos = []
+
+    for producto in productos:
+        stock = getattr(producto, 'stock', None)
+
+        try:
+            imagen = producto.Imagen_producto.url if producto.Imagen_producto else None
+        except ValueError:
+            imagen = None
+
+        lista_productos.append({
+            'id': producto.ID_Producto,
+            'nombre': producto.Nombre_producto,
+            'descripcion': producto.Descripcion_producto or '',
+            'tipo': producto.ID_Tipo_producto.Nombre_tipo_producto,
+            'tipo_id': producto.ID_Tipo_producto_id,
+            'subtipo': (
+                producto.ID_Subtipo.Nombre_subtipo
+                if producto.ID_Subtipo else ''
+            ),
+            'precio': str(producto.Precio),
+            'cantidad_presentacion': (
+                str(producto.Cantidad_presentacion)
+                if producto.Cantidad_presentacion is not None else ''
+            ),
+            'unidad_medida': producto.Unidad_medida_producto or '',
+            'unidades_por_presentacion': producto.Unidades_por_presentacion,
+            'estado': producto.Estado_producto,
+            'imagen': imagen,
+            'stock': stock.Cantidad_stock if stock else 0,
+            'stock_minimo': stock.Stock_minimo if stock else 10,
+            'proveedores': [
+                proveedor.nombre_proveedor
+                for proveedor in producto.proveedores.all()
+            ],
+        })
+
+    tipos = TiposProductos.objects.filter(
+        Estado_tipo_producto=True
+    ).order_by('Nombre_tipo_producto')
+
+    return JsonResponse({
+        'ok': True,
+        'productos': lista_productos,
+        'tipos': [
+            {
+                'id': tipo.ID_Tipo_producto,
+                'nombre': tipo.Nombre_tipo_producto
+            }
+            for tipo in tipos
+        ],
+        'total': len(lista_productos),
+    })
+
+
+
 
 # ============================================================
 # PROVEEDORES

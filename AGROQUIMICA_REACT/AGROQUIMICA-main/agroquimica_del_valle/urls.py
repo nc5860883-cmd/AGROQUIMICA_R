@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/csrf/', views.csrf_api, name='csrf_api'),
     path('api/login/', views.login_api, name='login_api'),
     path('api/panel-principal/', views.panel_principal_api, name='panel_principal_api'),
+    path('api/productos/', views.productos_api, name='productos_api'),
     path('cerrar-sesion/', views.cerrar_sesion, name='cerrar_sesion'),
 
     # Panel principal
