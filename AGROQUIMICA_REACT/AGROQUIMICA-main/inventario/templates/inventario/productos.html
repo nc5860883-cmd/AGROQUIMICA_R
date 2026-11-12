@@ -1,0 +1,1606 @@
+{% extends 'inventario/base.html' %}
+{# Esta pantalla muestra sus propios mensajes. #}
+{% block mensajes %}{% endblock %}
+{% load static %}
+{% load l10n %}
+
+{% block title %}
+    Productos - Agroquímica del Valle
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/productos.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'inventario/css/paginacion.css' %}">
+    <style>
+        /* Etiqueta gris para productos que todavía no tuvieron ingresos */
+        .pr-chip-bajo.pr-chip-nuevo {
+            background: #eef1ef;
+            color: #4d5f55;
+            border-color: #dfe5e1;
+            box-shadow: none;
+        }
+    </style>
+{% endblock %}
+
+{% block contenido %}
+
+<div class="bs-pantalla pr-pantalla">
+
+    <!-- ===================== MENSAJES ===================== -->
+
+    <div class="pr-toasts" id="toastContainer" aria-live="polite">
+        {% for message in messages %}
+            <div class="pr-toast {% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                <span>{{ message }}</span>
+                <button type="button" class="pr-toast-x" aria-label="Cerrar mensaje">✕</button>
+            </div>
+        {% endfor %}
+    </div>
+
+
+    <!-- ===================== ENCABEZADO ===================== -->
+
+    <header class="pr-header">
+
+        <div class="pr-header-texto">
+            <h1 class="pr-titulo">Gestión de productos</h1>
+            <p class="pr-subtitulo">Catálogo, presentación, stock y lotes de cada producto.</p>
+        </div>
+
+        <div class="pr-header-acciones">
+            {% if puede_egresar %}
+                <button type="button" class="btn pr-btn pr-btn-egreso" onclick="abrirModalEgreso()">
+                    <svg class="pr-icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    Registrar egreso
+                </button>
+            {% endif %}
+
+            {% if perm.productos_gestionar %}
+                <button type="button" class="btn pr-btn pr-btn-principal" onclick="abrirModalCrear()">
+                    <svg class="pr-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    Registrar producto
+                </button>
+            {% endif %}
+        </div>
+
+    </header>
+
+
+    <!-- ===================== RESUMEN (lo completa el JavaScript) ===================== -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-6 col-lg-3">
+            <div class="pr-stat pr-stat-azul">
+                <span class="pr-stat-icono">
+                    <svg class="pr-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                </span>
+                <div>
+                    <strong id="statActivos">0</strong>
+                    <span>Productos activos</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="pr-stat pr-stat-ambar">
+                <span class="pr-stat-icono">
+                    <svg class="pr-icon" viewBox="0 0 24 24"><path d="M22 17 13.5 8.5 8.5 13.5 2 7"/><path d="M16 17h6v-6"/></svg>
+                </span>
+                <div>
+                    <strong id="statBajo">0</strong>
+                    <span>En stock mínimo</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="pr-stat pr-stat-gris">
+                <span class="pr-stat-icono" style="background:#eef1ef;color:#65756c;">
+                    <svg class="pr-icon" viewBox="0 0 24 24"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="M3.29 7 12 12l8.71-5M12 22V12"/><path d="m17 13 5 5M22 13l-5 5"/></svg>
+                </span>
+                <div>
+                    <strong id="statSinStock">0</strong>
+                    <span>Sin stock</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="pr-stat pr-stat-rojo">
+                <span class="pr-stat-icono">
+                    <svg class="pr-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+                </span>
+                <div>
+                    <strong id="statInactivos">0</strong>
+                    <span>Productos inactivos</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ===================== BÚSQUEDA, FILTROS Y ORDEN ===================== -->
+
+    <div class="pr-filtros">
+
+        <div class="pr-buscador">
+            <svg class="pr-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search"
+                   id="searchInput"
+                   value="{{ busqueda }}"
+                   class="form-control"
+                   placeholder="Buscar por nombre, subtipo o proveedor..."
+                   aria-label="Buscar productos">
+        </div>
+
+        <select id="filtroTipo" class="form-select" aria-label="Filtrar por tipo">
+            <option value="">Todos los tipos</option>
+            {% for tipo in tipos_productos %}
+                <option value="{{ tipo.ID_Tipo_producto }}">{{ tipo.Nombre_tipo_producto }}</option>
+            {% endfor %}
+        </select>
+
+        <select id="filtroEstado" class="form-select" aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="Activo">Activos</option>
+            <option value="Inactivo">Inactivos</option>
+            <option value="bajo">En stock mínimo</option>
+        </select>
+
+        <select id="ordenProductos" class="form-select" aria-label="Ordenar productos">
+            <option value="recientes">Más recientes primero</option>
+            <option value="nombre">Nombre (A-Z)</option>
+            <option value="precio-asc">Precio: menor a mayor</option>
+            <option value="precio-desc">Precio: mayor a menor</option>
+            <option value="stock-asc">Stock: menor a mayor</option>
+        </select>
+
+    </div>
+
+
+    <!-- ===================== TARJETAS DE PRODUCTOS ===================== -->
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 g-4" id="gridProductos">
+
+        {% for producto in productos %}
+
+            {% with stock=producto.stock %}
+
+            <div class="col pr-col"
+                 data-id="{{ producto.ID_Producto }}"
+                 data-nombre="{{ producto.Nombre_producto|lower }}"
+                 data-tipo="{{ producto.ID_Tipo_producto.ID_Tipo_producto }}"
+                 data-estado="{{ producto.Estado_producto }}"
+                 data-precio="{{ producto.Precio|unlocalize }}"
+                 data-stock="{% if stock %}{{ stock.Cantidad_stock }}{% else %}0{% endif %}"
+                 data-minimo="{% if stock %}{{ stock.Stock_minimo }}{% else %}0{% endif %}"
+                 data-foto="{% if producto.Imagen_producto %}1{% else %}0{% endif %}"
+                 data-lotes="{{ producto.num_lotes|default:0 }}"
+                 data-search="{{ producto.Nombre_producto|lower }} {% if producto.ID_Subtipo %}{{ producto.ID_Subtipo.Nombre_subtipo|lower }}{% endif %} {{ producto.ID_Tipo_producto.Nombre_tipo_producto|lower }} {% for p in producto.proveedores.all %}{{ p.nombre_proveedor|lower }} {% endfor %}">
+
+                <article class="card pr-card h-100 {% if producto.Estado_producto != 'Activo' %}pr-card-inactiva{% endif %}">
+
+                    <!-- FOTO -->
+                    <div class="pr-foto">
+
+                        {% if producto.Imagen_producto %}
+                            <button type="button"
+                                    class="pr-foto-btn"
+                                    data-img="{{ producto.Imagen_producto.url }}"
+                                    data-titulo="{{ producto.Nombre_producto }}"
+                                    aria-label="Ver la foto de {{ producto.Nombre_producto }} en grande">
+                                <img src="{{ producto.Imagen_producto.url }}"
+                                     alt="Foto de {{ producto.Nombre_producto }}"
+                                     loading="lazy">
+                                <span class="pr-foto-zoom" aria-hidden="true">
+                                    <svg class="pr-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>
+                                </span>
+                            </button>
+                        {% else %}
+                            <div class="pr-foto-vacia">
+                                <svg class="pr-icon" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+                                <span>Sin foto</span>
+                            </div>
+                        {% endif %}
+
+                        <span class="pr-chip-estado {% if producto.Estado_producto == 'Activo' %}activo{% else %}inactivo{% endif %}">
+                            {{ producto.Estado_producto }}
+                        </span>
+
+                        <span class="pr-chip-bajo" hidden>
+                            <svg class="pr-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>
+                            Stock mínimo
+                        </span>
+
+                        <!-- Producto recién creado: todavía no entró mercadería -->
+                        <span class="pr-chip-bajo pr-chip-nuevo" hidden>
+                            <svg class="pr-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            Sin ingresos
+                        </span>
+
+                    </div>
+
+                    <!-- DATOS -->
+                    <div class="card-body pr-card-cuerpo">
+
+                        <p class="pr-categoria">
+                            {{ producto.ID_Tipo_producto.Nombre_tipo_producto }}
+                            {% if producto.ID_Subtipo %}<span>·</span> {{ producto.ID_Subtipo.Nombre_subtipo }}{% endif %}
+                        </p>
+
+                        <h2 class="pr-nombre">{{ producto.Nombre_producto }}</h2>
+
+                        <p class="pr-descripcion">
+                            {{ producto.Descripcion_producto|default:"Sin descripción" }}
+                        </p>
+
+                        <div class="pr-datos">
+                            <div>
+                                <span>Precio</span>
+                                <!-- El JavaScript lo muestra con formato argentino: $ 10.000 -->
+                                <strong class="pr-precio" data-pesos="{{ producto.Precio|unlocalize }}">$ {{ producto.Precio|floatformat:"-2g" }}</strong>
+                            </div>
+                            <div>
+                                <span>Presentación</span>
+                                <strong>
+                                    {% if producto.Cantidad_presentacion %}
+                                        {{ producto.Cantidad_presentacion|floatformat:"-2" }}
+                                        {% if producto.Unidad_medida_producto == 'litros' %}{% if producto.Cantidad_presentacion == 1 %}litro{% else %}litros{% endif %}{% else %}{{ producto.Unidad_medida_producto|default:"" }}{% endif %}
+                                    {% else %}—{% endif %}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="pr-stock">
+                            <div class="pr-stock-linea">
+                                <span>Stock disponible</span>
+                                <strong class="pr-stock-valor">
+                                    {% if stock %}{{ stock.Cantidad_stock }}{% else %}0{% endif %} un.
+                                </strong>
+                            </div>
+                            <div class="progress pr-stock-barra" role="progressbar" aria-label="Nivel de stock">
+                                <div class="progress-bar"></div>
+                            </div>
+                            <small class="pr-stock-minimo">
+                                Mínimo: {% if stock %}{{ stock.Stock_minimo }}{% else %}0{% endif %} un.
+                            </small>
+                        </div>
+
+                    </div>
+
+                    <!-- ACCIONES -->
+                    <div class="card-footer pr-card-pie">
+
+                        {% if producto.num_lotes > 0 %}
+                            <button type="button"
+                                    class="btn pr-btn-lotes"
+                                    data-lotes="{{ producto.ID_Producto }}"
+                                    data-titulo="{{ producto.Nombre_producto }}">
+                                <svg class="pr-icon" viewBox="0 0 24 24"><path d="m16 6 4 14M12 6v14M8 8v12M4 4v16"/></svg>
+                                Lotes <span class="pr-lotes-cantidad">{{ producto.num_lotes }}</span>
+                            </button>
+                        {% else %}
+                            <span class="pr-sin-lotes">Sin lotes</span>
+                        {% endif %}
+
+                        {% if perm.productos_gestionar %}
+                            <div class="pr-card-botones">
+
+                                <button type="button"
+                                        class="pr-icon-btn pr-btn-editar"
+                                        title="Editar producto"
+                                        aria-label="Editar {{ producto.Nombre_producto }}"
+                                        data-id="{{ producto.ID_Producto }}"
+                                        data-tipo="{{ producto.ID_Tipo_producto.ID_Tipo_producto }}"
+                                        data-subtipo="{% if producto.ID_Subtipo %}{{ producto.ID_Subtipo.ID_Subtipo }}{% endif %}"
+                                        data-nombre="{{ producto.Nombre_producto }}"
+                                        data-descripcion="{{ producto.Descripcion_producto|default:'' }}"
+                                        data-precio="{{ producto.Precio|unlocalize }}"
+                                        data-cantidad="{{ producto.Cantidad_presentacion|default_if_none:''|unlocalize }}"
+                                        data-unidad="{{ producto.Unidad_medida_producto|default:'' }}"
+                                        data-estado="{{ producto.Estado_producto }}"
+                                        data-minimo="{% if stock %}{{ stock.Stock_minimo }}{% endif %}"
+                                        data-proveedores="{% for p in producto.proveedores.all %}{{ p.ID_Proveedor }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                        data-imagen="{% if producto.Imagen_producto %}{{ producto.Imagen_producto.url }}{% endif %}">
+                                    <svg class="pr-icon" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                                </button>
+
+                                <button type="button"
+                                        class="pr-icon-btn pr-btn-eliminar"
+                                        title="Eliminar producto"
+                                        aria-label="Eliminar {{ producto.Nombre_producto }}"
+                                        data-id="{{ producto.ID_Producto }}"
+                                        data-nombre="{{ producto.Nombre_producto }}"
+                                        data-descripcion="{{ producto.Descripcion_producto|default:'' }}"
+                                        data-tipo="{{ producto.ID_Tipo_producto.Nombre_tipo_producto }}"
+                                        data-subtipo="{% if producto.ID_Subtipo %}{{ producto.ID_Subtipo.Nombre_subtipo }}{% else %}Sin subtipo{% endif %}"
+                                        data-precio="{{ producto.Precio|unlocalize }}"
+                                        data-presentacion="{{ producto.Cantidad_presentacion|floatformat:'-2' }} {% if producto.Unidad_medida_producto == 'litros' %}{% if producto.Cantidad_presentacion == 1 %}litro{% else %}litros{% endif %}{% else %}{{ producto.Unidad_medida_producto|default:'' }}{% endif %}"
+                                        data-stock="{% if stock %}{{ stock.Cantidad_stock }}{% else %}0{% endif %}"
+                                        data-estado="{{ producto.Estado_producto }}"
+                                        data-lotes="{{ producto.num_lotes|default:0 }}"
+                                        data-proveedores="{% for p in producto.proveedores.all %}{{ p.nombre_proveedor }}{% if not forloop.last %}|{% endif %}{% endfor %}"
+                                        data-imagen="{% if producto.Imagen_producto %}{{ producto.Imagen_producto.url }}{% endif %}">
+                                    <svg class="pr-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                </button>
+
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+                </article>
+
+                <!-- Lotes del producto: se copian al modal "Lotes" al tocar el botón -->
+                {% if producto.num_lotes > 0 %}
+                    <template id="lotes-{{ producto.ID_Producto }}">
+                        <div class="table-responsive">
+                            <table class="table pr-tabla-lotes align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Lote</th>
+                                        <th>Remito</th>
+                                        <th>Proveedor</th>
+                                        <th>Vencimiento</th>
+                                        <th class="text-end">Ingresada</th>
+                                        <th class="text-end">Actual</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lote in producto.lotes_ordenados %}
+                                        <tr>
+                                            <td class="fw-semibold">{{ lote.Numero_lote }}</td>
+                                            <td>{{ lote.ID_Remito.Numero_remito }}</td>
+                                            <td>{{ lote.ID_Remito.ID_Proveedor }}</td>
+                                            <td>{{ lote.Fecha_vencimiento|date:"d/m/Y" }}</td>
+                                            <td class="text-end">{{ lote.Cantidad_ingresada }}</td>
+                                            <td class="text-end">{{ lote.Cantidad_actual }}</td>
+                                            <td>
+                                                <span class="pr-lote-estado pr-estado-{{ lote.estado_actual|lower }}">
+                                                    {{ lote.estado_actual }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                {% endif %}
+
+            </div>
+
+            {% endwith %}
+
+        {% endfor %}
+
+    </div>
+
+
+    <!-- SIN PRODUCTOS / SIN RESULTADOS -->
+    <div class="pr-vacio" id="sinResultados" {% if productos %}hidden{% endif %}>
+        <svg class="pr-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <h3>{% if productos %}No hay productos con esos filtros{% else %}Todavía no hay productos{% endif %}</h3>
+        <p>{% if productos %}Intente con otra búsqueda o cambie los filtros.{% else %}Registre el primero con el botón "Registrar producto".{% endif %}</p>
+    </div>
+
+    <!-- PAGINACIÓN (la arma paginacion.js sobre los productos que coinciden) -->
+    <nav class="pg pr-paginacion" id="paginacionProductos" aria-label="Paginación" hidden></nav>
+
+    <p class="pr-contador" id="contadorProductos">
+        {{ productos|length }} producto{{ productos|length|pluralize }}
+    </p>
+
+
+    <!-- =====================================================
+         MODAL REGISTRAR PRODUCTO
+    ====================================================== -->
+
+    <div class="modal fade pr-modal" id="modalCrearProducto" tabindex="-1" aria-labelledby="tituloCrear" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+
+                <form method="POST"
+                      action="{% url 'crear_producto' %}"
+                      enctype="multipart/form-data"
+                      class="form-producto">
+
+                    {% csrf_token %}
+                    <input type="hidden" name="Estado_producto" value="Activo">
+
+                    <div class="modal-header">
+                        <div>
+                            <h2 class="modal-title" id="tituloCrear">Registrar producto</h2>
+                            <p class="pr-modal-sub">El stock inicial es 0: la mercadería entra con los lotes de un remito.</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row g-4">
+
+                            <!-- FOTO -->
+                            <div class="col-md-5">
+                                <label class="form-label">Foto del producto <span class="pr-opcional">(opcional)</span></label>
+
+                                <div class="pr-picker" data-picker>
+                                    <input type="file" name="Imagen_producto" id="crear_imagen"
+                                           accept="image/jpeg,image/png,image/webp" hidden>
+                                    <input type="hidden" name="quitar_imagen" value="0" data-quitar>
+
+                                    <label for="crear_imagen" class="pr-picker-zona" data-zona tabindex="0">
+                                        <img class="pr-picker-preview" alt="Vista previa de la foto" data-preview hidden>
+                                        <span class="pr-picker-vacio" data-vacio>
+                                            <span class="pr-picker-icono">
+                                                <svg class="pr-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg>
+                                            </span>
+                                            <strong>Arrastre una foto</strong>
+                                            <span>o haga clic para elegirla</span>
+                                            <small>JPG, PNG o WEBP · hasta 5 MB</small>
+                                        </span>
+                                    </label>
+
+                                    <div class="pr-picker-acciones" data-acciones hidden>
+                                        <label for="crear_imagen" class="btn btn-sm pr-btn-suave">Cambiar</label>
+                                        <button type="button" class="btn btn-sm pr-btn-suave-rojo" data-quitar-btn>Quitar</button>
+                                    </div>
+
+                                    <div class="pr-picker-error" data-error role="alert"></div>
+                                </div>
+                            </div>
+
+                            <!-- DATOS -->
+                            <div class="col-md-7">
+                                <div class="row g-3">
+
+                                    <div class="col-12">
+                                        <label class="form-label" for="crear_nombre">Nombre del producto</label>
+                                        <input type="text" class="form-control" id="crear_nombre" name="Nombre_producto"
+                                               placeholder="Ej. Glifosato 48%" maxlength="50" required>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label" for="crear_descripcion">Descripción</label>
+                                        <input type="text" class="form-control" id="crear_descripcion" name="Descripcion_producto"
+                                               maxlength="200" placeholder="Características del producto">
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="crear_tipo">Tipo de producto</label>
+                                        <select class="form-select" name="ID_Tipo_producto" id="crear_tipo"
+                                                onchange="actualizarSubtipos('crear_tipo', 'crear_subtipo')" required>
+                                            <option value="">Seleccione un tipo</option>
+                                            {% for tipo in tipos_activos %}
+                                                <option value="{{ tipo.ID_Tipo_producto }}">{{ tipo.Nombre_tipo_producto }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="crear_subtipo">Subtipo</label>
+                                        <select class="form-select" name="ID_Subtipo" id="crear_subtipo">
+                                            <option value="">Sin subtipo</option>
+                                            {% for sub in subtipos %}
+                                                <option value="{{ sub.ID_Subtipo }}" data-tipo="{{ sub.ID_Tipo_producto.ID_Tipo_producto }}">
+                                                    {{ sub.Nombre_subtipo }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="crear_precio">Precio por presentación</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="crear_precio" name="Precio"
+                                                   step="0.01" min="0.01" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="crear_minimo">Stock mínimo</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="crear_minimo" name="Stock_minimo"
+                                                   step="1" min="0" value="10" required>
+                                            <span class="input-group-text">un.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="crear_cantidad">Cantidad de presentación</label>
+                                        <input type="number" class="form-control" id="crear_cantidad" name="Cantidad_presentacion"
+                                               step="0.01" min="0.01" value="1" required>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="crear_unidad">Unidad de medida</label>
+                                        <select class="form-select" id="crear_unidad" name="Unidad_medida_producto" required>
+                                            <option value="">Seleccione una unidad</option>
+                                            <option value="kg">Kilogramos (kg)</option>
+                                            <option value="g">Gramos (g)</option>
+                                            <option value="litros">Litros (L)</option>
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- PROVEEDORES -->
+                            <div class="col-12">
+                                <label class="form-label">Proveedores que lo suministran</label>
+                                <div class="pr-proveedores">
+                                    {% for prov in proveedores_activos %}
+                                        <input type="checkbox" class="btn-check" name="proveedores"
+                                               id="crear_prov_{{ prov.ID_Proveedor }}" value="{{ prov.ID_Proveedor }}" autocomplete="off">
+                                        <label class="pr-proveedor-chip" for="crear_prov_{{ prov.ID_Proveedor }}">{{ prov.nombre_proveedor }}</label>
+                                    {% empty %}
+                                        <span class="pr-ayuda">No hay proveedores activos. Registre uno primero.</span>
+                                    {% endfor %}
+                                </div>
+                                <p class="pr-ayuda">Puede elegir más de uno. Solo estos proveedores podrán ingresar el producto en un remito.</p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn pr-btn pr-btn-claro" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn pr-btn pr-btn-principal">
+                            <svg class="pr-icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                            Registrar producto
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         MODAL EDITAR PRODUCTO
+    ====================================================== -->
+
+    <div class="modal fade pr-modal" id="modalEditarProducto" tabindex="-1" aria-labelledby="tituloEditar" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+
+                <form method="POST"
+                      action=""
+                      id="formEditarProducto"
+                      enctype="multipart/form-data"
+                      class="form-producto">
+
+                    {% csrf_token %}
+
+                    <div class="modal-header">
+                        <div>
+                            <h2 class="modal-title" id="tituloEditar">Modificar producto</h2>
+                            <p class="pr-modal-sub">Los cambios no modifican el stock actual.</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row g-4">
+
+                            <!-- FOTO -->
+                            <div class="col-md-5">
+                                <label class="form-label">Foto del producto <span class="pr-opcional">(opcional)</span></label>
+
+                                <div class="pr-picker" data-picker>
+                                    <input type="file" name="Imagen_producto" id="edit_imagen"
+                                           accept="image/jpeg,image/png,image/webp" hidden>
+                                    <input type="hidden" name="quitar_imagen" value="0" data-quitar>
+
+                                    <label for="edit_imagen" class="pr-picker-zona" data-zona tabindex="0">
+                                        <img class="pr-picker-preview" alt="Foto del producto" data-preview hidden>
+                                        <span class="pr-picker-vacio" data-vacio>
+                                            <span class="pr-picker-icono">
+                                                <svg class="pr-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg>
+                                            </span>
+                                            <strong>Arrastre una foto</strong>
+                                            <span>o haga clic para elegirla</span>
+                                            <small>JPG, PNG o WEBP · hasta 5 MB</small>
+                                        </span>
+                                    </label>
+
+                                    <div class="pr-picker-acciones" data-acciones hidden>
+                                        <label for="edit_imagen" class="btn btn-sm pr-btn-suave">Cambiar</label>
+                                        <button type="button" class="btn btn-sm pr-btn-suave-rojo" data-quitar-btn>Quitar</button>
+                                    </div>
+
+                                    <div class="pr-picker-error" data-error role="alert"></div>
+                                </div>
+                            </div>
+
+                            <!-- DATOS -->
+                            <div class="col-md-7">
+                                <div class="row g-3">
+
+                                    <div class="col-sm-8">
+                                        <label class="form-label" for="edit_nombre">Nombre del producto</label>
+                                        <input type="text" class="form-control" id="edit_nombre" name="Nombre_producto"
+                                               maxlength="50" required>
+                                    </div>
+
+                                    <div class="col-sm-4">
+                                        <label class="form-label" for="edit_estado">Estado</label>
+                                        <select class="form-select" id="edit_estado" name="Estado_producto">
+                                            <option value="Activo">Activo</option>
+                                            <option value="Inactivo">Inactivo</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label" for="edit_descripcion">Descripción</label>
+                                        <input type="text" class="form-control" id="edit_descripcion" name="Descripcion_producto"
+                                               maxlength="200">
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="edit_tipo">Tipo de producto</label>
+                                        <select class="form-select" id="edit_tipo" name="ID_Tipo_producto"
+                                                onchange="actualizarSubtipos('edit_tipo', 'edit_subtipo')" required>
+                                            {% for tipo in tipos_productos %}
+                                                <option value="{{ tipo.ID_Tipo_producto }}"{% if not tipo.Estado_tipo_producto %} data-inactivo="1"{% endif %}>{{ tipo.Nombre_tipo_producto }}{% if not tipo.Estado_tipo_producto %} (inactivo){% endif %}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="edit_subtipo">Subtipo</label>
+                                        <select class="form-select" id="edit_subtipo" name="ID_Subtipo">
+                                            <option value="">Sin subtipo</option>
+                                            {% for sub in subtipos %}
+                                                <option value="{{ sub.ID_Subtipo }}" data-tipo="{{ sub.ID_Tipo_producto.ID_Tipo_producto }}">
+                                                    {{ sub.Nombre_subtipo }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="edit_precio">Precio por presentación</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="edit_precio" name="Precio"
+                                                   step="0.01" min="0.01" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="edit_stock_minimo">Stock mínimo</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="edit_stock_minimo" name="Stock_minimo"
+                                                   step="1" min="0">
+                                            <span class="input-group-text">un.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="edit_cantidad">Cantidad de presentación</label>
+                                        <input type="number" class="form-control" id="edit_cantidad" name="Cantidad_presentacion"
+                                               step="0.01" min="0.01" required>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="edit_unidad">Unidad de medida</label>
+                                        <select class="form-select" id="edit_unidad" name="Unidad_medida_producto" required>
+                                            <option value="kg">Kilogramos (kg)</option>
+                                            <option value="g">Gramos (g)</option>
+                                            <option value="litros">Litros (L)</option>
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- PROVEEDORES -->
+                            <div class="col-12">
+                                <label class="form-label">Proveedores que lo suministran</label>
+                                <div class="pr-proveedores" id="edit_proveedores">
+                                    {% for prov in proveedores_todos %}
+                                        <input type="checkbox" class="btn-check" name="proveedores"
+                                               id="edit_prov_{{ prov.ID_Proveedor }}" value="{{ prov.ID_Proveedor }}" autocomplete="off"{% if not prov.estado_proveedor %} data-inactivo="1"{% endif %}>
+                                        <label class="pr-proveedor-chip" for="edit_prov_{{ prov.ID_Proveedor }}">{{ prov.nombre_proveedor }}{% if not prov.estado_proveedor %} (inactivo){% endif %}</label>
+                                    {% empty %}
+                                        <span class="pr-ayuda">No hay proveedores activos. Registre uno primero.</span>
+                                    {% endfor %}
+                                </div>
+                                <p class="pr-ayuda">Puede elegir más de uno. Solo estos proveedores podrán ingresar el producto en un remito.</p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn pr-btn pr-btn-claro" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn pr-btn pr-btn-principal">Guardar cambios</button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         MODAL ELIMINAR PRODUCTO
+    ====================================================== -->
+
+    <div class="modal fade pr-modal" id="modalEliminarProducto" tabindex="-1" aria-labelledby="tituloEliminar" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <form method="POST" action="" id="formEliminarProducto">
+
+                    {% csrf_token %}
+
+                    <div class="modal-header">
+                        <h2 class="modal-title" id="tituloEliminar">Eliminar producto</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="pr-aviso" id="el_aviso">
+                            <svg class="pr-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>
+                            <div>
+                                <strong id="el_aviso_titulo"></strong>
+                                <span id="el_aviso_texto"></span>
+                            </div>
+                        </div>
+
+                        <div class="pr-ficha-cab">
+                            <div class="pr-ficha-foto" id="el_foto"></div>
+                            <div class="flex-grow-1">
+                                <h3 id="el_nombre">—</h3>
+                                <p id="el_descripcion"></p>
+                            </div>
+                            <span class="pr-chip-estado" id="el_estado"></span>
+                        </div>
+
+                        <div class="pr-ficha-grid">
+                            <div><span>Tipo</span><strong id="el_tipo">—</strong></div>
+                            <div><span>Subtipo</span><strong id="el_subtipo">—</strong></div>
+                            <div><span>Precio</span><strong id="el_precio">—</strong></div>
+                            <div><span>Presentación</span><strong id="el_presentacion">—</strong></div>
+                            <div><span>Stock</span><strong id="el_stock">—</strong></div>
+                            <div><span>Lotes</span><strong id="el_lotes">—</strong></div>
+                            <div class="pr-ficha-full">
+                                <span>Proveedores</span>
+                                <div class="pr-ficha-chips" id="el_proveedores"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn pr-btn pr-btn-claro" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" id="el_confirmar" class="btn pr-btn pr-btn-peligro">
+                            <svg class="pr-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                            Eliminar producto
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         MODAL LOTES DEL PRODUCTO
+    ====================================================== -->
+
+    <div class="modal fade pr-modal" id="modalLotes" tabindex="-1" aria-labelledby="tituloLotes" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="tituloLotes">Lotes</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="contenidoLotes"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         MODAL FOTO AMPLIADA
+    ====================================================== -->
+
+    <div class="modal fade pr-modal pr-modal-foto" id="modalFoto" tabindex="-1" aria-labelledby="tituloFoto" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="tituloFoto">Foto</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="fotoAmpliada" src="" alt="">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         MODAL EGRESO POR VENTA
+    ====================================================== -->
+
+    {% if puede_egresar %}
+
+    {{ datos_egreso|json_script:"datosEgreso" }}
+
+    <div class="modal fade pr-modal" id="modalEgreso" tabindex="-1" aria-labelledby="tituloEgreso" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+
+                <form method="POST" action="{% url 'registrar_egreso' %}" id="formEgreso">
+
+                    {% csrf_token %}
+
+                    <div class="modal-header">
+                        <div>
+                            <h2 class="modal-title" id="tituloEgreso">Registrar egreso por venta</h2>
+                            <p class="pr-modal-sub">
+                                {{ usuario.Nombre_usuario }} {{ usuario.Apellido_usuario }} · {{ usuario.ID_Perfil.Nombre_perfil }} ·
+                                <span id="eg_fecha"></span>
+                            </p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row g-3">
+
+                            <div class="col-sm-6">
+                                <label class="form-label" for="eg_producto">Producto</label>
+                                <select class="form-select" id="eg_producto" onchange="egCargarLotes()" required></select>
+                            </div>
+
+                            <div class="col-sm-6">
+                                <label class="form-label" for="eg_lote">Lote</label>
+                                <select class="form-select" name="lote" id="eg_lote" onchange="egActualizar()" required></select>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="pr-eg-datos">
+                                    <div><span>Remito de origen</span><strong id="eg_remito">—</strong></div>
+                                    <div><span>Proveedor</span><strong id="eg_proveedor">—</strong></div>
+                                    <div><span>Vencimiento</span><strong id="eg_vence">—</strong></div>
+                                    <div><span>Cantidad del lote</span><strong id="eg_cant_lote">—</strong></div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label" for="eg_cantidad">Cantidad a vender</label>
+                                <input type="number" class="form-control" name="cantidad" id="eg_cantidad"
+                                       min="1" step="1" oninput="egActualizar()" required>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="pr-eg-resultado">
+                                    <div class="pr-eg-res" id="eg_box_lote">
+                                        <span>El lote quedará en</span>
+                                        <strong id="eg_res_lote">—</strong>
+                                    </div>
+                                    <div class="pr-eg-res" id="eg_box_stock">
+                                        <span>El stock quedará en</span>
+                                        <strong id="eg_res_stock">—</strong>
+                                    </div>
+                                </div>
+                                <p class="pr-ayuda mt-2" id="eg_aviso"></p>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label" for="eg_descripcion">Descripción</label>
+                                <textarea class="form-control" name="descripcion" id="eg_descripcion" rows="2"
+                                          maxlength="200" placeholder="Ej. Venta a cliente, factura 0001-00123"></textarea>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn pr-btn pr-btn-claro" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" id="eg_submit" class="btn pr-btn pr-btn-peligro">Registrar egreso</button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock contenido %}
+
+
+{% block extra_js %}
+
+<script src="{% static 'inventario/js/paginacion.js' %}"></script>
+
+<script>
+(function () {
+    'use strict';
+
+    const URL_EDITAR = "{% url 'editar_producto' 0 %}";
+    const URL_ELIMINAR = "{% url 'eliminar_producto' 0 %}";
+
+    const grid = document.getElementById('gridProductos');
+    const columnas = Array.from(document.querySelectorAll('.pr-col'));
+
+    const modal = function (id) {
+        return bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
+    };
+
+
+    /* =====================================================
+       TOASTS
+    ===================================================== */
+
+    function cerrarToast(toast) {
+        toast.classList.add('saliendo');
+        setTimeout(function () { toast.remove(); }, 300);
+    }
+
+    window.mostrarToast = function (mensaje, tipo) {
+        const toast = document.createElement('div');
+        toast.className = 'pr-toast ' + (tipo || 'warning');
+
+        const texto = document.createElement('span');
+        texto.textContent = mensaje;
+
+        const cerrar = document.createElement('button');
+        cerrar.type = 'button';
+        cerrar.className = 'pr-toast-x';
+        cerrar.setAttribute('aria-label', 'Cerrar mensaje');
+        cerrar.textContent = '✕';
+
+        toast.append(texto, cerrar);
+        document.getElementById('toastContainer').appendChild(toast);
+        setTimeout(function () { cerrarToast(toast); }, 4500);
+    };
+
+    document.getElementById('toastContainer').addEventListener('click', function (e) {
+        if (e.target.classList.contains('pr-toast-x')) { cerrarToast(e.target.parentElement); }
+    });
+
+    document.querySelectorAll('.pr-toast').forEach(function (toast) {
+        setTimeout(function () { cerrarToast(toast); }, 4500);
+    });
+
+
+    /* =====================================================
+       PRECIOS CON FORMATO ARGENTINO: $ 10.000 o $ 1.250,50
+    ===================================================== */
+
+    function pesos(valor) {
+        return '$ ' + Number(valor).toLocaleString('es-AR', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+        });
+    }
+
+    document.querySelectorAll('.pr-precio[data-pesos]').forEach(function (el) {
+        el.textContent = pesos(el.dataset.pesos);
+    });
+
+
+    /* =====================================================
+       TARJETAS: barra de stock, aviso de mínimo y entrada animada
+    ===================================================== */
+
+    // Producto que todavía no tuvo ningún ingreso (sin lotes).
+    function esNuevo(col) {
+        return Number(col.dataset.lotes) === 0;
+    }
+
+    // Alerta de stock mínimo: solo productos activos que ya tuvieron ingresos.
+    function esStockBajo(col) {
+        return col.dataset.estado === 'Activo' &&
+               !esNuevo(col) &&
+               Number(col.dataset.stock) <= Number(col.dataset.minimo);
+    }
+
+    columnas.forEach(function (col) {
+        const stock = Number(col.dataset.stock);
+        const minimo = Number(col.dataset.minimo);
+        const barra = col.querySelector('.progress-bar');
+
+        // La barra se llena en relación al doble del mínimo.
+        const referencia = Math.max(minimo * 2, 1);
+        const porcentaje = Math.min(100, Math.round(stock * 100 / referencia));
+
+        barra.classList.add(
+            stock <= minimo ? 'pr-barra-roja' :
+            stock <= minimo * 2 ? 'pr-barra-ambar' : 'pr-barra-verde'
+        );
+
+        // Empieza en 0 y crece hasta el valor real.
+        setTimeout(function () { barra.style.width = porcentaje + '%'; }, 300);
+
+        if (esStockBajo(col)) {
+            col.querySelector('.pr-chip-bajo:not(.pr-chip-nuevo)').hidden = false;
+            col.querySelector('.pr-stock-valor').classList.add('pr-texto-rojo');
+        } else if (col.dataset.estado === 'Activo' && esNuevo(col)) {
+            col.querySelector('.pr-chip-nuevo').hidden = false;
+        }
+    });
+
+    function animarEntrada(visibles) {
+        visibles.forEach(function (col, i) {
+            col.classList.remove('pr-entrando');
+            void col.offsetWidth;   // reinicia la animación
+            col.style.setProperty('--retraso', Math.min(i, 12) * 45 + 'ms');
+            col.classList.add('pr-entrando');
+        });
+    }
+
+
+    /* =====================================================
+       RESUMEN: los números cuentan hacia arriba
+    ===================================================== */
+
+    function contar(el, valor) {
+        const inicio = performance.now();
+        const duracion = 700;
+
+        (function paso(ahora) {
+            const avance = Math.min((ahora - inicio) / duracion, 1);
+            el.textContent = Math.round(valor * (1 - Math.pow(1 - avance, 3)));
+            if (avance < 1) { requestAnimationFrame(paso); }
+        })(inicio);
+    }
+
+    // Activos + Inactivos = total de productos.
+    // Stock mínimo y Sin stock cuentan solo los activos.
+    const activos = columnas.filter(function (c) { return c.dataset.estado === 'Activo'; });
+
+    contar(document.getElementById('statActivos'), activos.length);
+    contar(document.getElementById('statBajo'),
+        activos.filter(esStockBajo).length);
+    contar(document.getElementById('statSinStock'),
+        activos.filter(function (c) { return Number(c.dataset.stock) === 0; }).length);
+    contar(document.getElementById('statInactivos'),
+        columnas.length - activos.length);
+
+
+    /* =====================================================
+       BUSCAR, FILTRAR Y ORDENAR
+    ===================================================== */
+
+    const inputBuscar = document.getElementById('searchInput');
+    const filtroTipo = document.getElementById('filtroTipo');
+    const filtroEstado = document.getElementById('filtroEstado');
+    const orden = document.getElementById('ordenProductos');
+
+    const ORDENES = {
+        'recientes': function (a, b) { return b.dataset.id - a.dataset.id; },
+        'nombre': function (a, b) { return a.dataset.nombre.localeCompare(b.dataset.nombre); },
+        'precio-asc': function (a, b) { return a.dataset.precio - b.dataset.precio; },
+        'precio-desc': function (a, b) { return b.dataset.precio - a.dataset.precio; },
+        'stock-asc': function (a, b) { return a.dataset.stock - b.dataset.stock; },
+    };
+
+    /* Paginación: 12, 24 o 48 tarjetas (la grilla es de a 3 o 4). */
+    const paginador = Paginador({
+        contenedor: grid,
+        items: '.pr-col',
+        nav: document.getElementById('paginacionProductos'),
+        clave: 'productos',
+        opciones: [12, 24, 48],
+        subirA: document.querySelector('.pr-filtros'),
+        mostrar: function (col, visible) { col.hidden = !visible; },
+        alCambiar: animarEntrada,
+    });
+
+    function aplicarFiltros() {
+        const texto = inputBuscar.value.toLowerCase().trim();
+        const tipo = filtroTipo.value;
+        const estado = filtroEstado.value;
+        let coincidencias = 0;
+
+        columnas.slice().sort(ORDENES[orden.value]).forEach(function (col) {
+            grid.appendChild(col);
+
+            const coincide =
+                col.dataset.search.includes(texto) &&
+                (!tipo || col.dataset.tipo === tipo) &&
+                (!estado || (estado === 'bajo' ? esStockBajo(col) : col.dataset.estado === estado));
+
+            col.dataset.coincide = coincide ? '1' : '0';
+            if (coincide) { coincidencias++; }
+        });
+
+        // Se vuelve a la página 1 y se muestran las tarjetas de esa página.
+        paginador.refrescar(true);
+
+        document.getElementById('sinResultados').hidden = coincidencias > 0;
+        document.getElementById('contadorProductos').textContent =
+            coincidencias + (coincidencias === 1 ? ' producto encontrado' : ' productos encontrados');
+    }
+
+    let espera;
+    inputBuscar.addEventListener('input', function () {
+        clearTimeout(espera);
+        espera = setTimeout(aplicarFiltros, 150);
+    });
+
+    [filtroTipo, filtroEstado, orden].forEach(function (el) {
+        el.addEventListener('change', aplicarFiltros);
+    });
+
+    aplicarFiltros();
+
+
+    /* =====================================================
+       SUBTIPOS SEGÚN EL TIPO
+    ===================================================== */
+
+    window.actualizarSubtipos = function (idTipo, idSubtipo) {
+        const tipo = document.getElementById(idTipo).value;
+        const select = document.getElementById(idSubtipo);
+
+        select.querySelectorAll('option[data-tipo]').forEach(function (opcion) {
+            const mostrar = tipo !== '' && opcion.dataset.tipo === tipo;
+            opcion.hidden = !mostrar;
+            opcion.disabled = !mostrar;
+        });
+
+        const elegida = select.options[select.selectedIndex];
+
+        if (elegida && elegida.dataset.tipo && elegida.dataset.tipo !== tipo) {
+            select.value = '';
+        }
+    };
+
+
+    /* =====================================================
+       SELECTOR DE IMÁGENES (arrastrar, elegir, vista previa)
+    ===================================================== */
+
+    const TIPOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp'];
+    const MAX_BYTES = 5 * 1024 * 1024;
+
+    function crearPicker(raiz) {
+        const input = raiz.querySelector('input[type="file"]');
+        const quitar = raiz.querySelector('[data-quitar]');
+        const zona = raiz.querySelector('[data-zona]');
+        const preview = raiz.querySelector('[data-preview]');
+        const vacio = raiz.querySelector('[data-vacio]');
+        const acciones = raiz.querySelector('[data-acciones]');
+        const error = raiz.querySelector('[data-error]');
+        let urlTemporal = null;
+
+        function liberar() {
+            if (urlTemporal) { URL.revokeObjectURL(urlTemporal); urlTemporal = null; }
+        }
+
+        function mostrar(src) {
+            preview.src = src;
+            preview.hidden = false;
+            vacio.hidden = true;
+            acciones.hidden = false;
+            zona.classList.add('con-imagen');
+            zona.classList.remove('pr-aparece');
+            void zona.offsetWidth;
+            zona.classList.add('pr-aparece');
+        }
+
+        function vaciar() {
+            liberar();
+            preview.removeAttribute('src');
+            preview.hidden = true;
+            vacio.hidden = false;
+            acciones.hidden = true;
+            zona.classList.remove('con-imagen');
+        }
+
+        function rechazar(texto) {
+            error.textContent = texto;
+            input.value = '';
+            raiz.classList.remove('pr-sacudir');
+            void raiz.offsetWidth;
+            raiz.classList.add('pr-sacudir');
+        }
+
+        function elegir(archivo) {
+            if (!TIPOS_IMAGEN.includes(archivo.type)) {
+                rechazar('La imagen debe ser JPG, PNG o WEBP.');
+                return false;
+            }
+            if (archivo.size > MAX_BYTES) {
+                rechazar('La imagen no puede superar los 5 MB.');
+                return false;
+            }
+
+            error.textContent = '';
+            liberar();
+            urlTemporal = URL.createObjectURL(archivo);
+            mostrar(urlTemporal);
+            quitar.value = '0';
+            return true;
+        }
+
+        input.addEventListener('change', function () {
+            if (input.files[0]) { elegir(input.files[0]); }
+        });
+
+        // Arrastrar y soltar
+        ['dragenter', 'dragover'].forEach(function (evento) {
+            zona.addEventListener(evento, function (e) {
+                e.preventDefault();
+                zona.classList.add('arrastrando');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(function (evento) {
+            zona.addEventListener(evento, function (e) {
+                e.preventDefault();
+                zona.classList.remove('arrastrando');
+            });
+        });
+
+        zona.addEventListener('drop', function (e) {
+            const archivo = e.dataTransfer.files[0];
+            if (!archivo) { return; }
+
+            if (elegir(archivo)) {
+                const transferencia = new DataTransfer();
+                transferencia.items.add(archivo);
+                input.files = transferencia.files;
+            }
+        });
+
+        // Con teclado: Enter o espacio abren el selector
+        zona.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                input.click();
+            }
+        });
+
+        raiz.querySelector('[data-quitar-btn]').addEventListener('click', function () {
+            input.value = '';
+            quitar.value = '1';
+            error.textContent = '';
+            vaciar();
+        });
+
+        return {
+            reiniciar: function (urlActual) {
+                input.value = '';
+                quitar.value = '0';
+                error.textContent = '';
+                if (urlActual) { liberar(); mostrar(urlActual); } else { vaciar(); }
+            }
+        };
+    }
+
+    const pickerCrear = crearPicker(document.querySelector('#modalCrearProducto [data-picker]'));
+    const pickerEditar = crearPicker(document.querySelector('#modalEditarProducto [data-picker]'));
+
+
+    /* =====================================================
+       REGISTRAR PRODUCTO
+    ===================================================== */
+
+    window.abrirModalCrear = function () {
+        document.querySelector('#modalCrearProducto form').reset();
+        pickerCrear.reiniciar(null);
+        actualizarSubtipos('crear_tipo', 'crear_subtipo');
+        modal('modalCrearProducto').show();
+    };
+
+
+    /* =====================================================
+       EDITAR PRODUCTO
+    ===================================================== */
+
+    document.querySelectorAll('.pr-btn-editar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const d = boton.dataset;
+
+            document.getElementById('formEditarProducto').action =
+                URL_EDITAR.replace('/0/', '/' + d.id + '/');
+
+            document.getElementById('edit_nombre').value = d.nombre;
+            document.getElementById('edit_descripcion').value = d.descripcion;
+            // Tipos inactivos: solo se muestra el que el producto ya tenía.
+            document.querySelectorAll('#edit_tipo option[data-inactivo]').forEach(function (opcion) {
+                const propio = opcion.value === d.tipo;
+                opcion.hidden = !propio;
+                opcion.disabled = !propio;
+            });
+            document.getElementById('edit_tipo').value = d.tipo;
+            document.getElementById('edit_precio').value = d.precio;
+            document.getElementById('edit_cantidad').value = d.cantidad;
+            document.getElementById('edit_stock_minimo').value = d.minimo;
+            document.getElementById('edit_estado').value = d.estado;
+
+            const unidad = document.getElementById('edit_unidad');
+            if (d.unidad && !Array.from(unidad.options).some(function (o) { return o.value === d.unidad; })) {
+                unidad.add(new Option(d.unidad, d.unidad));
+            }
+            unidad.value = d.unidad;
+
+            const ids = (d.proveedores || '').split(',').filter(Boolean);
+            document.querySelectorAll('#edit_proveedores input').forEach(function (casilla) {
+                casilla.checked = ids.includes(casilla.value);
+
+                // Proveedor inactivo: solo figura si el producto ya lo tenía.
+                if (casilla.dataset.inactivo) {
+                    const visible = casilla.checked;
+                    casilla.hidden = !visible;
+                    casilla.disabled = !visible;
+                    casilla.nextElementSibling.hidden = !visible;
+                }
+            });
+
+            actualizarSubtipos('edit_tipo', 'edit_subtipo');
+            document.getElementById('edit_subtipo').value = d.subtipo || '';
+
+            pickerEditar.reiniciar(d.imagen || null);
+
+            modal('modalEditarProducto').show();
+        });
+    });
+
+
+    /* =====================================================
+       AL MENOS UN PROVEEDOR ANTES DE GUARDAR
+    ===================================================== */
+
+    document.querySelectorAll('.form-producto').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!form.querySelector('input[name="proveedores"]:checked')) {
+                e.preventDefault();
+                mostrarToast('Seleccione al menos un proveedor que suministre el producto.', 'warning');
+                return;
+            }
+
+            const boton = form.querySelector('[type="submit"]');
+            boton.disabled = true;
+            boton.classList.add('pr-cargando');
+        });
+    });
+
+    // Si el usuario vuelve con "Atrás", los botones no quedan bloqueados.
+    window.addEventListener('pageshow', function () {
+        document.querySelectorAll('.pr-cargando').forEach(function (boton) {
+            boton.disabled = false;
+            boton.classList.remove('pr-cargando');
+        });
+    });
+
+
+    /* =====================================================
+       ELIMINAR PRODUCTO
+    ===================================================== */
+
+    document.querySelectorAll('.pr-btn-eliminar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const d = boton.dataset;
+            const lotes = parseInt(d.lotes, 10) || 0;
+            const stock = parseInt(d.stock, 10) || 0;
+
+            document.getElementById('formEliminarProducto').action =
+                URL_ELIMINAR.replace('/0/', '/' + d.id + '/');
+
+            document.getElementById('el_nombre').textContent = d.nombre;
+            document.getElementById('el_descripcion').textContent = d.descripcion || 'Sin descripción';
+            document.getElementById('el_tipo').textContent = d.tipo;
+            document.getElementById('el_subtipo').textContent = d.subtipo;
+            document.getElementById('el_precio').textContent = pesos(d.precio);
+            document.getElementById('el_presentacion').textContent = d.presentacion;
+            document.getElementById('el_stock').textContent = stock + ' un.';
+            document.getElementById('el_lotes').textContent = lotes;
+
+            const estado = document.getElementById('el_estado');
+            estado.textContent = d.estado;
+            estado.className = 'pr-chip-estado ' + (d.estado === 'Activo' ? 'activo' : 'inactivo');
+
+            const foto = document.getElementById('el_foto');
+            foto.innerHTML = '';
+
+            if (d.imagen) {
+                const img = document.createElement('img');
+                img.src = d.imagen;
+                img.alt = 'Foto de ' + d.nombre;
+                foto.appendChild(img);
+            } else {
+                foto.textContent = d.nombre.slice(0, 2).toUpperCase();
+            }
+
+            const chips = document.getElementById('el_proveedores');
+            chips.innerHTML = '';
+
+            const proveedores = (d.proveedores || '').split('|').filter(Boolean);
+
+            (proveedores.length ? proveedores : ['Sin proveedores']).forEach(function (nombre) {
+                const chip = document.createElement('span');
+                chip.textContent = nombre;
+                chips.appendChild(chip);
+            });
+
+            const aviso = document.getElementById('el_aviso');
+            const confirmar = document.getElementById('el_confirmar');
+
+            if (stock > 0 || lotes > 0) {
+                const motivo = stock > 0
+                    ? 'Tiene ' + stock + ' unidades en stock'
+                    : 'Tiene ' + lotes + (lotes === 1 ? ' lote asociado' : ' lotes asociados');
+
+                aviso.className = 'pr-aviso pr-aviso-bloqueo';
+                document.getElementById('el_aviso_titulo').textContent = 'No se puede eliminar este producto.';
+
+                if (d.estado === 'Activo') {
+                    // Todavía se usa: se sugiere desactivarlo.
+                    document.getElementById('el_aviso_texto').textContent = motivo +
+                        '. Para dejar de usarlo, cambie su estado a Inactivo desde Editar.';
+                } else {
+                    // Ya está inactivo: no hay que hacer nada más.
+                    document.getElementById('el_aviso_texto').textContent = motivo +
+                        '. Ya está inactivo y se conserva en el sistema para mantener la trazabilidad.';
+                }
+
+                confirmar.disabled = true;
+            } else {
+                aviso.className = 'pr-aviso';
+                document.getElementById('el_aviso_titulo').textContent = '¿Eliminar este producto definitivamente?';
+                document.getElementById('el_aviso_texto').textContent = 'Esta acción no se puede deshacer.' +
+                (d.imagen ? ' También se borra su foto.' : '');
+                confirmar.disabled = false;
+            }
+
+            modal('modalEliminarProducto').show();
+        });
+    });
+
+
+    /* =====================================================
+       LOTES Y FOTO AMPLIADA
+    ===================================================== */
+
+    document.querySelectorAll('.pr-btn-lotes').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const plantilla = document.getElementById('lotes-' + boton.dataset.lotes);
+            const contenido = document.getElementById('contenidoLotes');
+
+            contenido.innerHTML = '';
+            contenido.appendChild(plantilla.content.cloneNode(true));
+            document.getElementById('tituloLotes').textContent = 'Lotes de ' + boton.dataset.titulo;
+
+            modal('modalLotes').show();
+        });
+    });
+
+    document.querySelectorAll('.pr-foto-btn').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const img = document.getElementById('fotoAmpliada');
+            img.src = boton.dataset.img;
+            img.alt = 'Foto de ' + boton.dataset.titulo;
+            document.getElementById('tituloFoto').textContent = boton.dataset.titulo;
+            modal('modalFoto').show();
+        });
+    });
+
+
+    /* =====================================================
+       EGRESO POR VENTA
+    ===================================================== */
+
+    const DATOS_EGRESO = (function () {
+        const el = document.getElementById('datosEgreso');
+        return el ? JSON.parse(el.textContent) : [];
+    })();
+
+    function egProducto() {
+        return DATOS_EGRESO[document.getElementById('eg_producto').value];
+    }
+
+    function egLote() {
+        const p = egProducto();
+        const id = Number(document.getElementById('eg_lote').value);
+        return p ? p.lotes.find(function (l) { return l.id === id; }) : null;
+    }
+
+    window.abrirModalEgreso = function () {
+        if (!DATOS_EGRESO.length) {
+            mostrarToast('No hay productos con lotes disponibles para egresar.', 'warning');
+            return;
+        }
+
+        const select = document.getElementById('eg_producto');
+        select.innerHTML = '';
+        DATOS_EGRESO.forEach(function (p, i) { select.add(new Option(p.nombre, i)); });
+
+        document.getElementById('eg_cantidad').value = '';
+        document.getElementById('eg_descripcion').value = '';
+        document.getElementById('eg_fecha').textContent =
+            new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+
+        egCargarLotes();
+        modal('modalEgreso').show();
+    };
+
+    window.egCargarLotes = function () {
+        const select = document.getElementById('eg_lote');
+        select.innerHTML = '';
+        egProducto().lotes.forEach(function (l) { select.add(new Option(l.numero, l.id)); });
+        egActualizar();
+    };
+
+    window.egActualizar = function () {
+        const p = egProducto();
+        const l = egLote();
+        if (!p || !l) { return; }
+
+        document.getElementById('eg_remito').textContent = l.remito;
+        document.getElementById('eg_proveedor').textContent = l.proveedor;
+        document.getElementById('eg_vence').textContent = l.vence;
+        document.getElementById('eg_cant_lote').textContent = l.cantidad;
+
+        const input = document.getElementById('eg_cantidad');
+        input.max = Math.min(l.cantidad, p.stock);
+
+        const cant = parseInt(input.value, 10);
+        const boxLote = document.getElementById('eg_box_lote');
+        const boxStock = document.getElementById('eg_box_stock');
+        const aviso = document.getElementById('eg_aviso');
+        const boton = document.getElementById('eg_submit');
+
+        boxLote.className = 'pr-eg-res';
+        boxStock.className = 'pr-eg-res';
+        aviso.textContent = '';
+
+        if (isNaN(cant) || cant <= 0) {
+            document.getElementById('eg_res_lote').textContent = '—';
+            document.getElementById('eg_res_stock').textContent = '—';
+            boton.disabled = true;
+            return;
+        }
+
+        const restoLote = l.cantidad - cant;
+        const restoStock = p.stock - cant;
+
+        document.getElementById('eg_res_lote').textContent = restoLote;
+        document.getElementById('eg_res_stock').textContent = restoStock;
+
+        if (restoLote < 0 || restoStock < 0) {
+            boxLote.className = 'pr-eg-res error';
+            boxStock.className = 'pr-eg-res error';
+            aviso.textContent = 'La cantidad supera lo disponible en el lote o en el stock.';
+            boton.disabled = true;
+            return;
+        }
+
+        if (restoStock <= p.stock_minimo) {
+            boxStock.className = 'pr-eg-res alerta';
+            aviso.textContent = 'El stock quedará en o por debajo del mínimo (' + p.stock_minimo + ').';
+        }
+
+        boton.disabled = false;
+    };
+
+    if (new URLSearchParams(window.location.search).get('egreso') === '1' && DATOS_EGRESO.length) {
+        abrirModalEgreso();
+    }
+
+})();
+</script>
+
+{% endblock extra_js %}

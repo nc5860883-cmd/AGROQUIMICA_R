@@ -1,0 +1,185 @@
+{% extends 'inventario/acceso_base.html' %}
+
+{% block titulo %}Recuperar contraseña{% endblock %}
+
+{% block formulario %}
+
+    {% if enviado %}
+
+        <!-- =====================================
+             ENLACE ENVIADO
+        ====================================== -->
+
+        <div class="estado-icono ok anim" style="--d: 1" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="m22 7-10 6L2 7"></path>
+            </svg>
+        </div>
+
+        <span class="form-eyebrow anim" style="--d: 2">Recuperar acceso</span>
+
+        <h2 class="anim" style="--d: 3">Revise su correo</h2>
+
+        <p class="description anim" style="--d: 4">
+            Si <strong>{{ email }}</strong> está registrado, le enviamos un enlace
+            para crear una nueva contraseña.
+        </p>
+
+        <ul class="pasos anim" style="--d: 5">
+            <li>Busque el correo de <strong>Agroquímica del Valle</strong> en su bandeja de entrada.</li>
+            <li>Si no aparece, revise la carpeta de <strong>spam</strong> o correo no deseado.</li>
+            <li>El enlace vence en <strong>1 hora</strong>.</li>
+        </ul>
+
+        <a href="{% url 'login' %}" class="btn-submit btn-link-submit anim" style="--d: 6">
+            <span class="btn-text">Volver al inicio de sesión</span>
+            <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"></path>
+            </svg>
+        </a>
+
+        <a href="{% url 'recuperar_contrasena' %}" class="link-volver anim" style="--d: 7">
+            ¿No le llegó? Intente con otro correo
+        </a>
+
+    {% else %}
+
+        <!-- =====================================
+             PEDIR EL CORREO
+        ====================================== -->
+
+        <span class="form-eyebrow anim" style="--d: 1">Recuperar acceso</span>
+
+        <h2 class="anim" style="--d: 2">¿Olvidó su contraseña?</h2>
+
+        <p class="description anim" style="--d: 3">
+            Ingrese el correo electrónico registrado en su usuario y le
+            enviaremos un enlace para crear una nueva contraseña.
+        </p>
+
+        <form method="POST" action="{% url 'recuperar_contrasena' %}" id="recuperarForm" novalidate>
+
+            {% csrf_token %}
+
+            {% if error %}
+                <div class="error-box" role="alert">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>{{ error }}</span>
+                </div>
+            {% endif %}
+
+            <!-- CORREO -->
+            <div class="field anim" style="--d: 4">
+
+                <label for="email" class="form-label">Correo electrónico</label>
+
+                <div class="input-icon">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="m22 7-10 6L2 7"></path>
+                    </svg>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="form-control{% if errores.email %} is-invalid{% endif %}"
+                        value="{{ email|default:'' }}"
+                        placeholder="Ingrese su correo electrónico"
+                        autocomplete="email"
+                        autocapitalize="none"
+                        spellcheck="false"
+                        maxlength="100"
+                        aria-describedby="emailError"
+                        {% if errores.email %}aria-invalid="true"{% endif %}
+                        required
+                    >
+                </div>
+
+                <div class="invalid-feedback" id="emailError" aria-live="polite">{{ errores.email|default:'' }}</div>
+
+            </div>
+
+                <button
+                    type="submit"
+                    id="btnEnviar"
+                    class="btn-submit anim"
+                    style="--d: 5"
+                    {% if bloqueo_segundos %}disabled{% endif %}
+                    data-bloqueo-segundos="{{ bloqueo_segundos|default:0 }}"
+                >
+                <span class="btn-text" id="textoBoton">
+                    {% if bloqueo_segundos %}
+                        Espere antes de volver a intentarlo
+                    {% else %}
+                        Enviar enlace
+                    {% endif %}
+                </span>
+
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+
+                <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m22 2-7 20-4-9-9-4Z"></path>
+                    <path d="M22 2 11 13"></path>
+                </svg>
+            </button>
+
+        </form>
+
+        <a href="{% url 'login' %}" class="link-volver anim" style="--d: 6">
+            ← Volver al inicio de sesión
+        </a>
+
+    {% endif %}
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        const formulario = document.getElementById('recuperarForm');
+
+        if (formulario) {
+            Acceso.formulario(formulario, {
+                email: Acceso.reglas.email,
+            });
+        }
+
+        const boton = document.getElementById('btnEnviar');
+
+        if (boton) {
+            let segundos = Number(boton.dataset.bloqueoSegundos || 0);
+
+            if (segundos > 0) {
+                const texto = document.getElementById('textoBoton');
+
+                boton.disabled = true;
+
+                function actualizarCuenta() {
+                    if (segundos <= 0) {
+                        boton.disabled = false;
+                        texto.textContent = 'Enviar enlace';
+                        return;
+                    }
+
+                    const minutos = Math.floor(segundos / 60);
+                    const resto = segundos % 60;
+
+                    texto.textContent =
+                        `Espere ${minutos}:${String(resto).padStart(2, '0')} minutos`;
+
+                    segundos--;
+
+                    setTimeout(actualizarCuenta, 1000);
+                }
+
+                actualizarCuenta();
+            }
+        }
+    </script>
+{% endblock %}

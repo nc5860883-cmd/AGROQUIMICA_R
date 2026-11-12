@@ -1,0 +1,104 @@
+{% extends 'inventario/acceso_base.html' %}
+
+{% block titulo %}Ingresar{% endblock %}
+
+{% block formulario %}
+
+    <span class="form-eyebrow anim" style="--d: 1">Su espacio de trabajo</span>
+
+    <h2 class="anim" style="--d: 2">Bienvenido de nuevo</h2>
+
+    <p class="description anim" style="--d: 3">
+        Ingrese sus credenciales para continuar.
+    </p>
+
+    <form method="POST" action="{% url 'login' %}" id="loginForm" novalidate>
+
+        {% csrf_token %}
+
+        <!-- Mensajes de éxito (por ejemplo, después de recuperar la contraseña) -->
+        {% for mensaje in messages %}
+            {% if mensaje.level_tag == 'success' %}
+                <div class="ok-box anim" style="--d: 3" role="status">{{ mensaje }}</div>
+            {% endif %}
+        {% endfor %}
+
+        <!-- Error general (credenciales incorrectas, usuario inactivo...) -->
+        {% if error %}
+            <div class="error-box" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ error }}</span>
+            </div>
+        {% endif %}
+
+        <!-- USUARIO -->
+        <div class="field anim" style="--d: 4">
+
+            <label for="usuario" class="form-label">Usuario</label>
+
+            <div class="input-icon">
+                <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+
+                <input
+                    type="text"
+                    id="usuario"
+                    name="usuario"
+                    class="form-control{% if errores.usuario %} is-invalid{% endif %}"
+                    maxlength="50"
+                    value="{{ usuario_ingresado|default:'' }}"
+                    placeholder="Ej.: usuarioX"
+                    autocomplete="username"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    aria-describedby="usuarioError"
+                    {% if errores.usuario %}aria-invalid="true"{% endif %}
+                    required
+                >
+            </div>
+
+            <div class="invalid-feedback" id="usuarioError" aria-live="polite">{{ errores.usuario|default:'' }}</div>
+
+        </div>
+
+        <!-- CONTRASEÑA -->
+        {% include 'inventario/_acceso_campo_clave.html' with id='password' etiqueta='Contraseña' placeholder='Ingrese su contraseña' autocompletar='current-password' error_campo=errores.password d=5 %}
+
+        <div class="forgot-row anim" style="--d: 6">
+            <a href="{% url 'recuperar_contrasena' %}">¿Olvidó su contraseña?</a>
+        </div>
+
+        <button type="submit" class="btn-submit anim" style="--d: 7">
+            <span class="btn-text">Ingresar al sistema</span>
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"></path>
+            </svg>
+        </button>
+
+    </form>
+
+    <div class="security-text anim" style="--d: 8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>Acceso exclusivo para personal autorizado</span>
+    </div>
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        Acceso.formulario(document.getElementById('loginForm'), {
+            usuario: Acceso.reglas.usuario,
+            password: Acceso.reglas.claveLogin,
+        });
+    </script>
+{% endblock %}

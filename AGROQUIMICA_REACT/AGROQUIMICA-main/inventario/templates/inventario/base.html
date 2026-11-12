@@ -1,0 +1,314 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Ícono de la pestaña -->
+    <link rel="icon" href="{% static 'inventario/images/favicon.ico' %}" sizes="any">
+    <link rel="icon" type="image/png" href="{% static 'inventario/images/logo_av.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'inventario/images/apple-touch-icon.png' %}">
+    
+    <!-- MODO OSCURO: se aplica antes de pintar para evitar parpadeo -->
+    <script>
+        try {
+            if (localStorage.getItem('av:tema') === 'oscuro') {
+                document.documentElement.classList.add('modo-oscuro');
+                // Tema oscuro también para las pantallas que usan Bootstrap
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        } catch (e) {}
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{% static 'inventario/css/validaciones.css' %}">
+    <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap"
+    rel="stylesheet"
+>
+
+    <title>
+        {% block title %}
+            Agroquímica del Valle
+        {% endblock %}
+    </title>
+
+    <!-- BOOTSTRAP 5.3 EN TODAS LAS PANTALLAS.
+         Va antes de los CSS propios: ante un conflicto ganan los del sistema.
+         bootstrap_ajustes.css devuelve el menú y la barra superior a su estilo. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+    <!-- Otras librerías de estilos que necesite una pantalla puntual -->
+    {% block css_librerias %}
+    {% endblock %}
+
+    <link rel="stylesheet" href="{% static 'inventario/css/sidebar.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'inventario/css/topbar.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'inventario/css/confirmar.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/cerrar_sesion.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/bootstrap_ajustes.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'inventario/css/ojo_clave.css' %}">
+
+    {% block extra_css %}
+    {% endblock %}
+
+    <!-- ESTILO COMÚN (el de Productos): animaciones de entrada, botones,
+         tarjetas y tablas. Va después del CSS de cada pantalla. -->
+    <link rel="stylesheet" href="{% static 'inventario/css/pantallas.css' %}?v=3">
+
+    <link rel="stylesheet" href="{% static 'inventario/css/tema.css' %}?v=2">
+
+    <!-- BOTONES E ÍCONOS UNIFICADOS: el mismo aspecto para la misma función
+         en todas las pantallas. Va al final para ganar a los estilos propios. -->
+    <link rel="stylesheet" href="{% static 'inventario/css/botones.css' %}?v=2">
+</head>
+
+<body>
+
+    <div class="layout">
+
+        {% include 'inventario/_sidebar.html' with activo=activo %}
+
+        <!-- RECORDAR LA POSICIÓN DEL MENÚ LATERAL -->
+        <script>
+        (function () {
+            var nav = document.querySelector('#sidebar .sidebar-nav');
+            if (!nav) { return; }
+
+            var guardado = sessionStorage.getItem('sidebarNavScroll');
+            if (guardado !== null) {
+                nav.scrollTop = parseInt(guardado, 10) || 0;
+            }
+
+            // Antes de salir de la página, guarda la posición actual
+            window.addEventListener('pagehide', function () {
+                sessionStorage.setItem('sidebarNavScroll', nav.scrollTop);
+            });
+
+            nav.addEventListener('scroll', function () {
+                sessionStorage.setItem('sidebarNavScroll', nav.scrollTop);
+            });
+        })();
+        </script>
+
+        <div class="page-area">
+
+            <!-- TOPBAR: ubicación actual a la izquierda; fecha, alertas y tema a la derecha.
+                 Los datos (ruta, fecha y alertas) los arma context_processors.py -->
+            <header class="topbar" id="topbar">
+
+                <div class="topbar-left">
+                    <button
+                        class="topbar-icon-btn topbar-menu-btn"
+                        id="topbarMenuToggle"
+                        type="button"
+                        aria-label="Mostrar u ocultar el menú"
+                        aria-controls="sidebar"
+                        aria-expanded="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line class="tb-linea tb-linea-1" x1="4" y1="7" x2="20" y2="7"></line>
+                            <line class="tb-linea tb-linea-2" x1="4" y1="12" x2="14" y2="12"></line>
+                            <line class="tb-linea tb-linea-3" x1="4" y1="17" x2="20" y2="17"></line>
+                        </svg>
+                    </button>
+
+                    <nav aria-label="Ubicación actual">
+                        <ol class="topbar-crumbs">
+                            <li class="topbar-crumb topbar-crumb-inicio">
+                                <a href="{% url 'panel_principal' %}" title="Panel principal" aria-label="Panel principal">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m3 10 9-7 9 7"></path>
+                                        <path d="M5 9v11h14V9"></path>
+                                        <path d="M10 20v-6h4v6"></path>
+                                    </svg>
+                                </a>
+                            </li>
+
+                            {% for tramo in topbar_ubicacion %}
+                                {% if forloop.last %}
+                                    <li class="topbar-crumb topbar-crumb-actual" aria-current="page">{{ tramo.nombre }}</li>
+                                {% else %}
+                                    <li class="topbar-crumb">
+                                        {% if tramo.url %}<a href="{{ tramo.url }}">{{ tramo.nombre }}</a>{% else %}{{ tramo.nombre }}{% endif %}
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </nav>
+                </div>
+
+                <div class="topbar-right">
+
+                    <div class="topbar-date">
+                        <span class="topbar-date-ico" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        </span>
+                        <span>{{ topbar_fecha }}</span>
+                    </div>
+
+                    <span class="topbar-sep" aria-hidden="true"></span>
+
+                    <!-- BANDEJA DE NOTIFICACIONES (tabla NOTIFICACION): las dirigidas al
+                         perfil del usuario, con el número de no leídas.
+                         La lista la carga notificaciones.js desde url_notificaciones. -->
+                    {% with n=notificaciones_no_leidas %}
+                    <div class="topbar-notif"
+                         id="topbarNotif"
+                         data-url="{{ url_notificaciones }}"
+                         data-url-leer="{% url 'leer_notificacion' 0 %}"
+                         data-url-leer-todas="{% url 'leer_todas_notificaciones' %}">
+
+                        {% csrf_token %}
+
+                        <button type="button"
+                                class="topbar-icon-btn topbar-alertas{% if n %} tiene-alertas{% endif %}"
+                                id="btnNotif"
+                                aria-haspopup="dialog"
+                                aria-expanded="false"
+                                aria-controls="panelNotif"
+                                title="{% if n %}{{ n }} notificaci{{ n|pluralize:'ón,ones' }} sin leer{% else %}Sin notificaciones nuevas{% endif %}"
+                                aria-label="Notificaciones{% if n %}: {{ n }} sin leer{% endif %}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                                <path d="M10 21h4"></path>
+                            </svg>
+                            <span class="topbar-badge" id="notifContador" {% if not n %}hidden{% endif %}>{% if n > 99 %}99+{% else %}{{ n }}{% endif %}</span>
+                        </button>
+
+                        <div class="tb-notif-panel" id="panelNotif" role="dialog" aria-label="Notificaciones" hidden>
+
+                            <div class="tb-notif-cab">
+                                <div>
+                                    <strong>Notificaciones</strong>
+                                    <span id="notifResumen">
+                                        {% if n %}{{ n }} sin leer{% else %}Todo al día{% endif %}
+                                    </span>
+                                </div>
+                                <button type="button" class="tb-notif-todas" id="notifLeerTodas" {% if not n %}hidden{% endif %}>
+                                    Marcar todas como leídas
+                                </button>
+                            </div>
+
+                            <ul class="tb-notif-lista" id="notifLista" aria-live="polite">
+                                <li class="tb-notif-vacio">Cargando…</li>
+                            </ul>
+
+                            <a class="tb-notif-pie" href="{% url 'bandeja_notificaciones' %}">
+                                Ver todas las notificaciones
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M5 12h14M13 6l6 6-6 6"></path>
+                                </svg>
+                            </a>
+
+                        </div>
+
+                    </div>
+                    {% endwith %}
+
+                    <!-- tema.js dibuja el ícono (sol/luna) dentro de este botón -->
+                    <button
+                        class="topbar-icon-btn topbar-tema"
+                        id="btnTema"
+                        type="button"
+                        aria-label="Cambiar a modo oscuro"
+                        title="Cambiar a modo oscuro">
+                    </button>
+
+                </div>
+
+            </header>
+
+            <!-- CONTENIDO -->
+            <main class="main-content bs-pantalla">
+
+                {# Mensajes del sistema. Las pantallas con su propio contenedor vacían este bloque. #}
+                {% block mensajes %}
+                    {% include 'inventario/_mensajes.html' %}
+                {% endblock %}
+
+                {% block contenido %}
+                {% endblock %}
+
+            </main>
+
+        </div>
+
+    </div>
+
+
+    <!-- CONFIRMACIONES, BLOQUEO POR INACTIVIDAD Y TEMA -->
+    {{ rutas_denegadas|json_script:"rutas-denegadas" }}
+    <script src="{% static 'inventario/js/confirmar.js' %}"></script>
+    <script src="{% static 'inventario/js/cerrar_sesion.js' %}"></script>
+    <script src="{% static 'inventario/js/inactividad.js' %}?v=3"
+            data-limite-ms="{{ inactividad_ms }}"
+            data-bloqueo-url="{% url 'bloqueo' %}"
+            data-ping-url="{% url 'sesion_ping' %}"
+            data-login-url="{% url 'login' %}"></script>
+    <script src="{% static 'inventario/js/tema.js' %}"></script>
+    <script src="{% static 'inventario/js/notificaciones.js' %}?v=2"></script>
+
+    <!-- BOOTSTRAP (modales, menús desplegables, tooltips) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Conserva lo escrito en un modal si se cierra sin querer (clic fuera / Escape) -->
+    <script src="{% static 'inventario/js/borrador_modal.js' %}"></script>
+
+    <!-- REACT: solo se carga en las pantallas que lo usan.
+         Esas pantallas incluyen 'inventario/_react.html' en este bloque. -->
+    {% block react %}
+    {% endblock %}
+
+    {% block extra_js %}
+    {% endblock %}
+
+
+    <!-- BOTÓN DEL MENÚ Y SOMBRA DEL TOPBAR AL BAJAR -->
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const menu = document.getElementById('topbarMenuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.getElementById('topbar');
+
+            // Mostrar u ocultar el menú lateral (el ícono se anima con CSS)
+            if (menu && sidebar) {
+                const actualizarBoton = function () {
+                    const oculto = sidebar.classList.contains('sidebar-hidden');
+                    menu.classList.toggle('menu-cerrado', oculto);
+                    menu.setAttribute('aria-expanded', oculto ? 'false' : 'true');
+                };
+
+                menu.addEventListener('click', function () {
+                    sidebar.classList.toggle('sidebar-hidden');
+                    actualizarBoton();
+                });
+
+                actualizarBoton();
+            }
+
+            // El topbar toma sombra cuando la página se desplaza
+            if (topbar) {
+                const marcarScroll = function () {
+                    topbar.classList.toggle('topbar-con-scroll', window.scrollY > 4);
+                };
+
+                window.addEventListener('scroll', marcarScroll, { passive: true });
+                marcarScroll();
+            }
+
+        });
+
+    </script>
+    <script src="{% static 'inventario/js/validaciones.js' %}?v=3"></script>
+    <!-- Ojo para mostrar u ocultar contraseñas -->
+    <script src="{% static 'inventario/js/ojo_clave.js' %}"></script>
+</body>
+</html>

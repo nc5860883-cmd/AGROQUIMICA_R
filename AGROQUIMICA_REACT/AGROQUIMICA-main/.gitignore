@@ -1,0 +1,36 @@
+# Entorno virtual
+venv/
+.venv/
+venv*/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Variables de entorno
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+*.sql
+
+# React / Vite
+frontend/node_modules/
+frontend/dist/
+
+# Datos locales y archivos generados
+datos.json
+datos_prueba.json
+analitica/salida/
+docker-compose-

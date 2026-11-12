@@ -1,0 +1,329 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}
+    Auditoría - Agroquímica del Valle
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/alertas.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/styles/auditoria.css' %}?v=14">
+    <link rel="stylesheet" href="{% static 'inventario/css/paginacion.css' %}">
+{% endblock %}
+
+{% block contenido %}
+
+<div class="al-page">
+
+    <!-- ENCABEZADO -->
+    <header class="al-header">
+        <h1 class="al-title">Auditoría del sistema</h1>
+        <p class="av-subtitulo">Registro de las acciones que realizan los usuarios en el sistema.</p>
+    </header>
+
+    {% include 'inventario/_resumen.html' %}
+
+    <!-- CRITERIOS DE BÚSQUEDA -->
+    <form method="GET"
+          action="{% url 'gestion_auditoria' %}"
+          class="al-filtros">
+
+        <div class="al-filtros-grid">
+
+            <div class="al-campo">
+                <label for="entidad">Sección</label>
+                <select class="form-select" id="entidad" name="entidad">
+                    <option value="">Todas las secciones</option>
+                    {% for e in entidades %}
+                        <option value="{{ e }}" {% if e == entidad %}selected{% endif %}>
+                            {{ e }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="al-campo">
+                <label for="accion">Acción</label>
+                <select class="form-select" id="accion" name="accion">
+                    <option value="">Todas las acciones</option>
+                    <option value="CREACION" {% if accion == 'CREACION' %}selected{% endif %}>Creación</option>
+                    <option value="MODIFICACION" {% if accion == 'MODIFICACION' %}selected{% endif %}>Modificación</option>
+                    <option value="ELIMINACION" {% if accion == 'ELIMINACION' %}selected{% endif %}>Eliminación</option>
+                    <option value="ANULACION" {% if accion == 'ANULACION' %}selected{% endif %}>Anulación</option>
+                    <option value="INICIO_SESION" {% if accion == 'INICIO_SESION' %}selected{% endif %}>Inicio de sesión</option>
+                    <option value="CIERRE_SESION" {% if accion == 'CIERRE_SESION' %}selected{% endif %}>Cierre de sesión</option>
+                    <option value="BLOQUEO_INACTIVIDAD" {% if accion == 'BLOQUEO_INACTIVIDAD' %}selected{% endif %}>Bloqueo por inactividad</option>
+                    <option value="EGRESO_STOCK" {% if accion == 'EGRESO_STOCK' %}selected{% endif %}>Egreso de stock</option>
+                    <option value="EGRESO_VENCIMIENTO" {% if accion == 'EGRESO_VENCIMIENTO' %}selected{% endif %}>Egreso por vencimiento</option>
+                    <option value="INGRESO_LOTE" {% if accion == 'INGRESO_LOTE' %}selected{% endif %}>Ingreso de lote</option>
+                    <option value="DESCARGA_PDF" {% if accion == 'DESCARGA_PDF' %}selected{% endif %}>Descarga de PDF</option>
+                    <option value="ASIGNACION_PERFIL" {% if accion == 'ASIGNACION_PERFIL' %}selected{% endif %}>Asignación de perfil</option>
+                    <option value="ASIGNACION_PERMISOS" {% if accion == 'ASIGNACION_PERMISOS' %}selected{% endif %}>Asignación de permisos</option>
+                    <option value="ATENCION_ALERTA" {% if accion == 'ATENCION_ALERTA' %}selected{% endif %}>Atención de alerta</option>
+                    <option value="ATENCION_NOTIFICACION" {% if accion == 'ATENCION_NOTIFICACION' %}selected{% endif %}>Atención de notificación</option>
+                    <option value="BAJA" {% if accion == 'BAJA' %}selected{% endif %}>Baja</option>
+                    <option value="ACTIVACION" {% if accion == 'ACTIVACION' %}selected{% endif %}>Activación</option>
+                    <option value="RESET_CONTRASENA" {% if accion == 'RESET_CONTRASENA' %}selected{% endif %}>Restablecimiento de contraseña</option>
+                    <option value="ENVIO_RECUPERACION" {% if accion == 'ENVIO_RECUPERACION' %}selected{% endif %}>Envío de enlace de recuperación</option>
+                    <option value="RECUPERA_CONTRASENA" {% if accion == 'RECUPERA_CONTRASENA' %}selected{% endif %}>Recuperación de contraseña</option>
+                </select>
+            </div>
+
+            <div class="al-campo">
+                <label for="usuario">Realizada por</label>
+                <select class="form-select" id="usuario" name="usuario">
+                    <option value="">Todos los usuarios</option>
+                    {% for u in usuarios %}
+                        <option value="{{ u.ID_Usuario }}"
+                            {% if usuario_id|stringformat:"s" == u.ID_Usuario|stringformat:"s" %}selected{% endif %}>
+                            {{ u.Apellido_usuario }}, {{ u.Nombre_usuario }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="al-campo">
+                <label for="fecha_desde">Desde</label>
+                <input class="form-control" type="date" id="fecha_desde" name="fecha_desde" value="{{ fecha_desde }}">
+            </div>
+
+            <div class="al-campo">
+                <label for="fecha_hasta">Hasta</label>
+                <input class="form-control" type="date" id="fecha_hasta" name="fecha_hasta" value="{{ fecha_hasta }}">
+            </div>
+
+        </div>
+
+        <div class="al-filtros-acc">
+
+            <button type="submit" class="al-btn al-btn-primary">
+                <svg class="al-icon" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="m21 21-4.3-4.3"/>
+                </svg>
+                Consultar
+            </button>
+
+            <a href="{% url 'gestion_auditoria' %}" class="al-btn al-btn-claro">
+                Limpiar
+            </a>
+
+        </div>
+
+    </form>
+
+    <!-- RESULTADOS -->
+    <section class="al-card">
+
+        <div class="al-table-wrap">
+
+            <table class="table table-hover align-middle av-filas al-table aud-tabla">
+
+                <thead>
+                    <tr>
+                        <th>Fecha y hora</th>
+                        <th>Usuario</th>
+                        <th>Perfil</th>
+                        <th>Sección</th>
+                        <th>Registro</th>
+                        <th>Acción</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+
+                <tbody data-pg-animar>
+
+                    {% for log in pagina %}
+                    <tr>
+
+                        <!-- FECHA Y HORA -->
+                        <td>
+                            <div class="aud-doble">
+                                <span>{{ log.Fecha_hora|date:"d/m/Y" }}</span>
+                                <span class="aud-sub">{{ log.Fecha_hora|date:"H:i" }}</span>
+                            </div>
+                        </td>
+
+                        <!-- USUARIO -->
+                        <td class="aud-nowrap">
+                            {% if log.ID_Usuario %}
+                                {{ log.ID_Usuario.Apellido_usuario }} {{ log.ID_Usuario.Nombre_usuario }}
+                            {% else %}
+                                Sistema
+                            {% endif %}
+                        </td>
+
+                        <!-- PERFIL -->
+                        <td class="aud-nowrap">
+                            {{ log.ID_Usuario.ID_Perfil.Nombre_perfil|default:"Sin perfil" }}
+                        </td>
+
+                        <!-- SECCIÓN -->
+                        <td>
+                            <span class="al-producto">{{ log.Seccion }}</span>
+                        </td>
+
+                        <!-- REGISTRO
+                             En las acciones de sesión no hay un registro afectado:
+                             se muestra el usuario que entró, salió o se bloqueó. -->
+                        <td class="aud-registro">
+                            {% if log.nombre_registro %}
+                                {{ log.nombre_registro }}
+                            {% elif log.ID_Usuario and log.Accion == 'INICIO_SESION' or log.ID_Usuario and log.Accion == 'CIERRE_SESION' or log.ID_Usuario and log.Accion == 'BLOQUEO_INACTIVIDAD' %}
+                                {{ log.ID_Usuario.Usuario }}
+                            {% else %}
+                                <span class="aud-registro-vacio">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- ACCIÓN -->
+                        <td>
+                            {% if log.Accion == 'CREACION' %}
+                                <span class="al-badge aud-cre">Creación</span>
+
+                            {% elif log.Accion == 'MODIFICACION' %}
+                                <span class="al-badge aud-mod">Modificación</span>
+
+                            {% elif log.Accion == 'ELIMINACION' %}
+                                <span class="al-badge aud-eli">Eliminación</span>
+
+                            {% elif log.Accion == 'ANULACION' %}
+                                <span class="al-badge aud-anu">Anulación</span>
+
+                            {% elif log.Accion == 'INICIO_SESION' %}
+                                <span class="al-badge aud-ini">Inicio de sesión</span>
+
+                            {% elif log.Accion == 'CIERRE_SESION' %}
+                                <span class="al-badge aud-cie">Cierre de sesión</span>
+
+                            {% elif log.Accion == 'EGRESO_STOCK' %}
+                                <span class="al-badge aud-egr">Egreso de stock</span>
+
+                            {% elif log.Accion == 'EGRESO_VENCIMIENTO' %}
+                                <span class="al-badge aud-egr-ven">Egreso por vencimiento</span>
+
+                            {% elif log.Accion == 'INGRESO_LOTE' %}
+                                <span class="al-badge aud-ing">Ingreso de lote</span>
+
+                            {% elif log.Accion == 'DESCARGA_PDF' %}
+                                <span class="al-badge aud-pdf">Descarga de PDF</span>
+
+                            {% elif log.Accion == 'ASIGNACION_PERFIL' %}
+                                <span class="al-badge aud-asp">Asignación de perfil</span>
+
+                            {% elif log.Accion == 'ASIGNACION_PERMISOS' %}
+                                <span class="al-badge aud-asm">Asignación de permisos</span>
+
+                            {% elif log.Accion == 'ATENCION_ALERTA' %}
+                                <span class="al-badge aud-ate">Atención de alerta</span>
+
+                            {% elif log.Accion == 'ATENCION_NOTIFICACION' %}
+                                <span class="al-badge aud-not">Atención de notificación</span>
+
+                            {% elif log.Accion == 'BAJA' %}
+                                <span class="al-badge aud-baj">Baja</span>
+
+                            {% elif log.Accion == 'ACTIVACION' %}
+                                <span class="al-badge aud-act">Activación</span>
+
+                            {% elif log.Accion == 'RESET_CONTRASENA' %}
+                                <span class="al-badge aud-res">Restablecimiento de contraseña</span>
+
+                            {% elif log.Accion == 'ENVIO_RECUPERACION' %}
+                                <span class="al-badge aud-env">Envío de enlace de recuperación</span>
+
+                            {% elif log.Accion == 'BLOQUEO_INACTIVIDAD' %}
+                                <span class="al-badge aud-blq">Bloqueo por inactividad</span>
+
+                            {% elif log.Accion == 'RECUPERA_CONTRASENA' %}
+                                <span class="al-badge aud-rec">Recuperación de contraseña</span>
+
+                            {% else %}
+                                <span class="al-badge">{{ log.Accion }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- DETALLE -->
+                        <td>
+                            <button type="button"
+                                    class="aud-btn-detalle av-ico-ver"
+                                    data-url="{% url 'detalle_auditoria' log.pk %}"
+                                    onclick="abrirDetalleAuditoria(this)"
+                                    aria-label="Ver detalle del registro">
+                                Ver
+                            </button>
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="7" class="al-vacio">
+                            No se encontraron registros
+                            con los criterios seleccionados.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- PAGINACIÓN (en el servidor: conserva los filtros) -->
+        {% include 'inventario/_paginacion.html' %}
+
+        <!-- PIE -->
+        <div class="al-pie">
+
+            <span>
+                {{ pagina.paginator.count }}
+                registro{{ pagina.paginator.count|pluralize }}
+                encontrado{{ pagina.paginator.count|pluralize }}
+            </span>
+
+            <span>Agroquímica del Valle</span>
+
+        </div>
+
+    </section>
+
+    <!-- MODAL DE DETALLE -->
+    <div id="modalAuditoria" class="aud-modal" aria-hidden="true">
+
+        <div class="aud-modal-contenido"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="tituloModalAuditoria">
+
+            <div class="aud-modal-header">
+                <h2 id="tituloModalAuditoria">Detalle de auditoría</h2>
+
+                <button type="button"
+                        class="aud-modal-cerrar"
+                        onclick="cerrarDetalleAuditoria()"
+                        aria-label="Cerrar">
+                    &times;
+                </button>
+            </div>
+
+            <div id="contenidoDetalleAuditoria">
+                <!-- Aquí se cargarán los datos del registro -->
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'inventario/js/paginacion.js' %}"></script>
+    <script src="{% static 'inventario/js/auditoria.js' %}?v=4"></script>
+{% endblock %}

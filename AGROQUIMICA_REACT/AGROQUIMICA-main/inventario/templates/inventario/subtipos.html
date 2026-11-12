@@ -1,0 +1,405 @@
+{% extends 'inventario/base.html' %}
+{# Esta pantalla muestra sus propios mensajes. #}
+{% block mensajes %}{% endblock %}
+{% load static %}
+
+{% block title %}
+    Gestión de Subtipos - Agroquímica del Valle
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/subtipos.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/paginacion.css' %}">
+{% endblock %}
+
+{% block contenido %}
+
+<!-- Mensajes Django (toasts) -->
+<div class="ts-toasts" id="toastContainer">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="ts-toast {% if message.tags %}{{ message.tags }}{% else %}success{% endif %}"
+                 id="toast-{{ forloop.counter }}">
+                <span>{{ message }}</span>
+                <span class="ts-toast-x" onclick="this.parentElement.remove()">✕</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+</div>
+
+
+<div class="ts-page">
+
+    <!-- ENCABEZADO -->
+    <header class="ts-header">
+
+        <div>
+            <h1 class="ts-title">Gestión de subtipos</h1>
+            <p class="av-subtitulo">Subdivisiones de cada tipo de producto.</p>
+        </div>
+
+        {% if perm.subtipos_gestionar %}
+        <button type="button" class="ts-btn ts-btn-primary" onclick="abrirModalCrear()">
+            <svg class="ts-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo subtipo
+        </button>
+        {% endif %}
+
+    </header>
+
+
+    {% include 'inventario/_resumen.html' %}
+
+
+    <!-- BUSCADOR (se envía con Enter; la vista filtra por "q") -->
+    <form method="GET" class="ts-search">
+
+        <svg class="ts-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+
+        <input class="form-control" type="text" name="q" value="{{ busqueda|default:'' }}" placeholder="Buscar subtipo...">
+
+    </form>
+
+
+    <!-- TABLA -->
+    <section class="ts-card">
+
+        <div class="ts-table-wrap">
+
+            <table class="table table-hover align-middle av-filas ts-table">
+
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo de producto</th>
+                        <th>Descripción</th>
+                        <th>Productos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="listaSubtipos">
+
+                    {% for subtipo in subtipos %}
+
+                        <tr class="ts-fila">
+
+                            <td><span class="ts-nombre">{{ subtipo.Nombre_subtipo }}</span></td>
+
+                            <td class="ts-muted">{{ subtipo.ID_Tipo_producto.Nombre_tipo_producto }}</td>
+
+                            <td class="ts-muted">{{ subtipo.Descripcion_subtipo|default:"—" }}</td>
+
+                            <td class="ts-muted">{{ subtipo.cantidad_productos }}</td>
+
+                            <td>
+                                <div class="ts-acciones">
+
+                                    {% if perm.subtipos_gestionar %}
+
+                                    <!-- EDITAR (lápiz) -->
+                                    <button type="button" class="ts-icon-btn" title="Modificar subtipo" aria-label="Modificar subtipo"
+                                        onclick="abrirModalEditar(
+                                            '{{ subtipo.ID_Subtipo }}',
+                                            '{{ subtipo.ID_Tipo_producto.ID_Tipo_producto }}',
+                                            '{{ subtipo.Nombre_subtipo|escapejs }}',
+                                            '{{ subtipo.Descripcion_subtipo|default:''|escapejs }}'
+                                        )">
+                                        <svg class="ts-icon" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                                    </button>
+
+                                    <!-- ELIMINAR (solo si no tiene productos) -->
+                                    <button type="button" class="ts-icon-btn ts-baja"
+                                        title="{% if subtipo.cantidad_productos %}No se puede eliminar: tiene productos asociados{% else %}Eliminar subtipo{% endif %}"
+                                        aria-label="Eliminar subtipo"
+                                        onclick="abrirModalEliminar(
+                                            '{{ subtipo.ID_Subtipo }}',
+                                            '{{ subtipo.Nombre_subtipo|escapejs }}',
+                                            {{ subtipo.cantidad_productos }}
+                                        )">
+                                        <svg class="ts-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                    </button>
+
+                                    {% endif %}
+
+                                </div>
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="5" class="ts-vacio">No hay subtipos registrados.</td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- PAGINACIÓN (la arma paginacion.js) -->
+        <nav class="pg" id="paginacionSubtipos" aria-label="Paginación" hidden></nav>
+
+        <div class="ts-pie">
+            <span>
+                {{ subtipos|length }} registro{{ subtipos|length|pluralize }} encontrado{{ subtipos|length|pluralize }}
+            </span>
+            <span>Agroquímica del Valle</span>
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- ===================== MODAL CREAR / EDITAR SUBTIPO ===================== -->
+<div class="ts-modal" id="modalSubtipo">
+
+    <div class="ts-modal-box">
+
+        <div class="ts-modal-head">
+            <h2 id="tituloModal">Registrar subtipo</h2>
+            <button type="button" class="ts-modal-x" onclick="cerrarModal()" aria-label="Cerrar">
+                <svg class="ts-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <form method="POST" id="formSubtipo" action="{% url 'crear_subtipo' %}">
+
+            {% csrf_token %}
+
+            <div class="ts-modal-body">
+
+                <div class="ts-grupo">
+                    <label for="nombre_subtipo">Nombre</label>
+                    <input class="form-control" type="text" name="Nombre_subtipo" id="nombre_subtipo" maxlength="50" required>
+                </div>
+
+                <div class="ts-grupo">
+                    <label for="tipo_producto">Tipo de producto</label>
+                    <select class="form-select" name="ID_Tipo_producto" id="tipo_producto" required>
+                        <option value="">Seleccionar tipo</option>
+                        {% for tipo in tipos_productos %}
+                            <option value="{{ tipo.ID_Tipo_producto }}"{% if not tipo.Estado_tipo_producto %} data-inactivo="1"{% endif %}>{{ tipo.Nombre_tipo_producto }}{% if not tipo.Estado_tipo_producto %} (inactivo){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="ts-grupo">
+                    <label for="descripcion_subtipo">Descripción</label>
+                    <input class="form-control" type="text" name="Descripcion_subtipo" id="descripcion_subtipo" maxlength="200">
+                </div>
+
+            </div>
+
+            <div class="ts-modal-pie">
+                <button type="button" class="ts-btn ts-btn-claro" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="ts-btn ts-btn-primary">Guardar</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ===================== MODAL ELIMINAR SUBTIPO ===================== -->
+<div class="ts-modal" id="modalEliminarSubtipo">
+
+    <div class="ts-modal-box ts-modal-eliminar-box">
+
+        <div class="ts-modal-head">
+            <h2>Eliminar subtipo</h2>
+            <button type="button" class="ts-modal-x" onclick="cerrarModalEliminar()" aria-label="Cerrar">
+                <svg class="ts-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="ts-modal-body ts-eliminar-body">
+
+            <div class="ts-eliminar-icono">
+                <svg class="ts-icon" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+            </div>
+
+            <p id="mensajeEliminarSubtipo" class="ts-eliminar-mensaje">
+                ¿Deseas eliminar este subtipo definitivamente?
+            </p>
+
+            <p class="ts-eliminar-advertencia">
+                Esta acción no se puede deshacer.
+            </p>
+
+        </div>
+
+        <!-- EL FORMULARIO SE ENVÍA SOLO AL CONFIRMAR -->
+        <form method="POST" id="formEliminarSubtipo" action="">
+
+            {% csrf_token %}
+
+            <div class="ts-modal-pie">
+                <button type="button" class="ts-btn ts-btn-claro" onclick="cerrarModalEliminar()">Cancelar</button>
+                <button type="submit" class="ts-btn ts-btn-eliminar">Sí, eliminar</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script src="{% static 'inventario/js/paginacion.js' %}"></script>
+
+<script>
+
+    const modalSubtipo = document.getElementById('modalSubtipo');
+    const formSubtipo = document.getElementById('formSubtipo');
+    const modalEliminar = document.getElementById('modalEliminarSubtipo');
+
+
+    /* =====================================================
+       PAGINACIÓN (en el navegador)
+    ===================================================== */
+    Paginador({
+        contenedor: document.getElementById('listaSubtipos'),
+        items: '.ts-fila',
+        nav: document.getElementById('paginacionSubtipos'),
+        clave: 'subtipos',
+        subirA: document.querySelector('.ts-search'),
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.ts-toast').forEach(function (toast) {
+            setTimeout(function () { toast.remove(); }, 4000);
+        });
+    });
+
+
+    /* =====================================================
+       MENSAJES
+    ===================================================== */
+    function mostrarToast(mensaje, tipo) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'ts-toast ' + (tipo || 'warning');
+
+        const texto = document.createElement('span');
+        texto.textContent = mensaje;
+
+        const cerrar = document.createElement('span');
+        cerrar.className = 'ts-toast-x';
+        cerrar.textContent = '✕';
+        cerrar.onclick = function () { toast.remove(); };
+
+        toast.appendChild(texto);
+        toast.appendChild(cerrar);
+        container.appendChild(toast);
+
+        setTimeout(function () { toast.remove(); }, 4000);
+    }
+
+
+    /* =====================================================
+       CREAR / EDITAR
+    ===================================================== */
+
+    // Tipos inactivos: ocultos al registrar; al editar solo se
+    // muestra el que el subtipo ya tenía asignado.
+    function mostrarTiposInactivos(tipoActual) {
+        document.querySelectorAll('#tipo_producto option[data-inactivo]').forEach(function (opcion) {
+            const propio = String(opcion.value) === String(tipoActual);
+            opcion.hidden = !propio;
+            opcion.disabled = !propio;
+        });
+    }
+
+    function abrirModalCrear() {
+
+        document.getElementById('tituloModal').textContent = 'Registrar subtipo';
+
+        formSubtipo.action = "{% url 'crear_subtipo' %}";
+
+        mostrarTiposInactivos('');
+        document.getElementById('tipo_producto').value = '';
+        document.getElementById('nombre_subtipo').value = '';
+        document.getElementById('descripcion_subtipo').value = '';
+
+        modalSubtipo.style.display = 'flex';
+
+    }
+
+
+    function abrirModalEditar(id, tipo, nombre, descripcion) {
+
+        document.getElementById('tituloModal').textContent = 'Modificar subtipo';
+
+        formSubtipo.action = "{% url 'editar_subtipo' 0 %}".replace('/0/', '/' + id + '/');
+
+        mostrarTiposInactivos(tipo);
+        document.getElementById('tipo_producto').value = tipo;
+        document.getElementById('nombre_subtipo').value = nombre;
+        document.getElementById('descripcion_subtipo').value = descripcion;
+
+        modalSubtipo.style.display = 'flex';
+
+    }
+
+
+    function cerrarModal() {
+        modalSubtipo.style.display = 'none';
+    }
+
+
+    modalSubtipo.addEventListener('click', function (e) {
+        if (e.target === modalSubtipo) { cerrarModal(); }
+    });
+
+
+    /* =====================================================
+       ELIMINAR (solo si no tiene productos)
+    ===================================================== */
+    function abrirModalEliminar(id, nombre, cantidadProductos) {
+
+        if (cantidadProductos > 0) {
+            mostrarToast(
+                'No se puede eliminar el subtipo "' + nombre + '" porque tiene ' +
+                cantidadProductos + ' producto' + (cantidadProductos === 1 ? '' : 's') +
+                ' asociado' + (cantidadProductos === 1 ? '' : 's') + '.',
+                'warning'
+            );
+            return;
+        }
+
+        document.getElementById('formEliminarSubtipo').action =
+            "{% url 'eliminar_subtipo' 0 %}".replace('/0/', '/' + id + '/');
+
+        document.getElementById('mensajeEliminarSubtipo').textContent =
+            '¿Deseas eliminar el subtipo "' + nombre + '" definitivamente?';
+
+        modalEliminar.style.display = 'flex';
+
+    }
+
+
+    function cerrarModalEliminar() {
+        modalEliminar.style.display = 'none';
+    }
+
+
+    modalEliminar.addEventListener('click', function (e) {
+        if (e.target === modalEliminar) { cerrarModalEliminar(); }
+    });
+
+</script>
+
+{% endblock %}

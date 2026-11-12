@@ -1,0 +1,41 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}
+    Panel Principal - Agroquímica del Valle
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/panel_principal.css' %}">
+{% endblock %}
+
+{% block contenido %}
+
+    <!-- Datos reales del sistema para el componente React -->
+    {{ datos_panel|json_script:"datos-panel" }}
+
+    <!-- Acá React dibuja el panel (con clases de Bootstrap) -->
+    <!-- La foto de la portada se pasa a React con data-foto-* -->
+    <div id="panel-raiz" class="pp-panel"
+         data-foto-webp="{% static 'inventario/images/productos_estanteria.webp' %}"
+         data-foto-jpg="{% static 'inventario/images/productos_estanteria.jpg' %}">
+        <p class="pp-cargando">Cargando panel…</p>
+    </div>
+
+    <noscript>
+        <p class="pp-cargando">Para ver el panel principal debe habilitar JavaScript.</p>
+    </noscript>
+
+{% endblock %}
+
+
+{% block react %}
+    {% include 'inventario/_react.html' %}
+{% endblock %}
+
+
+{% block extra_js %}
+    <script type="text/babel"
+            data-presets="env,react"
+            src="{% static 'inventario/react/panel_principal.jsx' %}"></script>
+{% endblock %}

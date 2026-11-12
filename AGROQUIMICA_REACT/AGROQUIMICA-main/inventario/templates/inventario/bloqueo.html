@@ -1,0 +1,99 @@
+{% extends 'inventario/acceso_base.html' %}
+
+{% block titulo %}Sesión bloqueada{% endblock %}
+
+{% block formulario %}
+
+    <div class="estado-icono aviso anim" style="--d: 1" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+        </svg>
+    </div>
+
+    <span class="form-eyebrow anim" style="--d: 2">Sesión bloqueada por inactividad</span>
+
+    <h2 class="anim" style="--d: 3">Bienvenido/a nuevamente, {{ usuario.Nombre_usuario }}</h2>
+
+    <p class="description anim" style="--d: 4">
+        Pasaron más de {{ minutos_inactividad|default:30 }} minutos sin actividad.
+        Ingrese su contraseña para volver exactamente donde estaba.
+    </p>
+
+    <form method="POST" action="{% url 'bloqueo' %}" id="bloqueoForm" novalidate>
+
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ siguiente }}">
+
+        {% if error %}
+            <div class="error-box" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ error }}</span>
+            </div>
+        {% endif %}
+
+        <!-- USUARIO: viene completo con el de la sesión bloqueada -->
+        <div class="field anim" style="--d: 5">
+
+            <label for="usuario" class="form-label">Usuario</label>
+
+            <div class="input-icon">
+                <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+
+                <input
+                    type="text"
+                    id="usuario"
+                    name="usuario"
+                    class="form-control"
+                    maxlength="50"
+                    value="{{ usuario.Usuario }}"
+                    autocomplete="username"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    aria-describedby="usuarioError"
+                    required
+                >
+            </div>
+
+            <div class="invalid-feedback" id="usuarioError" aria-live="polite"></div>
+
+        </div>
+
+        <!-- CONTRASEÑA -->
+        {% include 'inventario/_acceso_campo_clave.html' with id='password' etiqueta='Contraseña' placeholder='Ingrese su contraseña' autocompletar='current-password' error_campo='' d=6 %}
+
+        <button type="submit" class="btn-submit anim" style="--d: 7">
+            <span class="btn-text">Continuar donde estaba</span>
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"></path>
+            </svg>
+        </button>
+
+    </form>
+
+    <a href="{% url 'cerrar_sesion' %}" class="link-volver anim" style="--d: 8">
+        No soy {{ usuario.Nombre_usuario }}, cerrar sesión
+    </a>
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        // Avisa a la próxima página que debe restaurar lo que estabas escribiendo.
+        try { sessionStorage.setItem('av:restaurar', '1'); } catch (e) {}
+
+        Acceso.formulario(document.getElementById('bloqueoForm'), {
+            usuario: Acceso.reglas.usuario,
+            password: Acceso.reglas.claveLogin,
+        });
+    </script>
+{% endblock %}

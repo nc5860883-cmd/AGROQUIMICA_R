@@ -1,0 +1,170 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Mis permisos - Agroquímica del Valle{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/mis_permisos.css' %}?v=2">
+{% endblock %}
+
+{% block contenido %}
+
+<div class="bs-pantalla mp-pantalla">
+
+    <!-- ===================== ENCABEZADO ===================== -->
+
+    <header class="mp-encabezado">
+        <div>
+            <h1 class="mp-titulo">Mis permisos</h1>
+            <p class="mp-subtitulo">Esto es lo que puede hacer en el sistema con su perfil.</p>
+        </div>
+    </header>
+
+
+    <!-- ===================== DATOS DEL USUARIO ===================== -->
+
+    <section class="card mp-tarjeta mp-usuario mb-3">
+        <div class="card-body d-flex flex-wrap align-items-center gap-3">
+
+            <div class="mp-avatar">{{ usuario.Nombre_usuario|first|upper }}{{ usuario.Apellido_usuario|first|upper }}</div>
+
+            <div class="flex-grow-1 mp-datos">
+                <h2 class="mp-nombre">{{ usuario.Nombre_usuario }} {{ usuario.Apellido_usuario }}</h2>
+                <div class="d-flex flex-wrap column-gap-3 row-gap-1 mp-meta">
+                    <span>@{{ usuario.Usuario }}</span>
+                    <span>{{ usuario.Email_usuario }}</span>
+                </div>
+            </div>
+
+            <span class="badge rounded-pill mp-chip">Perfil · {{ usuario.ID_Perfil.Nombre_perfil }}</span>
+
+        </div>
+    </section>
+
+
+    <!-- ===================== RESUMEN (4 indicadores) ===================== -->
+
+    <div class="row g-3 mb-3">
+
+        <div class="col-6 col-lg-3">
+            <div class="mp-stat mp-stat-verde">
+                <span class="mp-stat-icono">
+                    <svg class="mp-icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                </span>
+                <div>
+                    <strong>{{ total }}</strong>
+                    <span>Permisos habilitados</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="mp-stat mp-stat-azul">
+                <span class="mp-stat-icono">
+                    <svg class="mp-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                </span>
+                <div>
+                    <strong>{{ modulos|length }}</strong>
+                    <span>Módulos con acceso</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="mp-stat mp-stat-ambar">
+                <span class="mp-stat-icono">
+                    <svg class="mp-icon" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                </span>
+                <div>
+                    <strong>{{ total_catalogo }}</strong>
+                    <span>Permisos del sistema</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="mp-stat mp-stat-rojo">
+                <span class="mp-stat-icono">
+                    <svg class="mp-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/><path d="M12 7v5l3 2"/></svg>
+                </span>
+                <div>
+                    <strong>{{ porcentaje }}%</strong>
+                    <span>Del sistema habilitado</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ===================== AVISO Y BARRA DE AVANCE ===================== -->
+
+    {% if es_admin %}
+        <div class="alert mp-aviso d-flex align-items-center gap-2 mb-3" role="status">
+            <svg class="mp-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            Su perfil tiene acceso total: puede usar todas las funciones del sistema.
+        </div>
+    {% endif %}
+
+    <section class="card mp-tarjeta mb-4">
+        <div class="card-body d-flex flex-wrap align-items-center gap-3 mp-resumen-cuerpo">
+            <span><strong>{{ total }}</strong> de {{ total_catalogo }} permisos habilitados</span>
+
+            <div class="progress flex-grow-1 mp-progreso"
+                 role="progressbar"
+                 aria-label="Permisos habilitados"
+                 aria-valuenow="{{ porcentaje }}"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                <div class="progress-bar" style="width: {{ porcentaje }}%"></div>
+            </div>
+
+            <span class="fw-semibold">{{ porcentaje }}%</span>
+        </div>
+    </section>
+
+
+    <!-- ===================== PERMISOS POR MÓDULO ===================== -->
+
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xxl-3 g-3">
+        {% for modulo in modulos %}
+            <div class="col mp-col">
+                <section class="card h-100 mp-tarjeta mp-modulo-card">
+
+                    <div class="card-header d-flex align-items-center gap-3 mp-modulo-cab">
+                        <span class="mp-modulo-icono">
+                            <svg class="mp-icon"><use href="#{{ modulo.icono }}"></use></svg>
+                        </span>
+                        <h3 class="flex-grow-1 mp-modulo-titulo">{{ modulo.nombre }}</h3>
+                        <span class="badge rounded-pill mp-contador">{{ modulo.permisos|length }}</span>
+                    </div>
+
+                    <ul class="list-group list-group-flush">
+                        {% for permiso in modulo.permisos %}
+                            <li class="list-group-item d-flex align-items-start gap-3 mp-item">
+                                <span class="mp-check">
+                                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>
+                                </span>
+                                <div>
+                                    <strong>{{ permiso.nombre }}</strong>
+                                    <small>{{ permiso.descripcion }}</small>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                </section>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="mp-vacio">
+                    Su perfil todavía no tiene permisos asignados.
+                    Solicite a un administrador que se los asigne.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}

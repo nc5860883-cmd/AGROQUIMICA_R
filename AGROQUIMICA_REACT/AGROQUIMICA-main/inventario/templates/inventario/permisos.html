@@ -1,0 +1,183 @@
+{% extends 'inventario/base.html' %}
+{# Esta pantalla muestra sus propios mensajes. #}
+{% block mensajes %}{% endblock %}
+{% load static %}
+
+{% block title %}Permisos del sistema - Agroquímica del Valle{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/permisos.css' %}">
+{% endblock %}
+
+{% block contenido %}
+
+<div class="bs-pantalla pm-page">
+
+    <!-- ===================== ENCABEZADO ===================== -->
+
+    <header class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="pm-titulo">Permisos del sistema</h1>
+            <p class="av-subtitulo">Qué permite cada permiso y qué perfiles lo tienen asignado.</p>
+            
+        </div>
+
+        {% if perm.perfiles_ver %}
+            <a href="{% url 'gestion_perfiles' %}" class="btn btn-success">
+                Ir a Perfiles de acceso
+            </a>
+        {% endif %}
+    </header>
+
+
+    <!-- ===================== MENSAJES ===================== -->
+
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} small py-2">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+
+    {% include 'inventario/_resumen.html' %}
+
+    <!-- ===================== BUSCADOR ===================== -->
+
+    <form method="GET" onsubmit="return false;" class="pm-search" role="search">
+
+        <svg class="pm-svg pm-search-icono" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4.3-4.3"/>
+        </svg>
+
+        <input class="form-control" type="text"
+               id="buscarPermiso"
+               value="{{ busqueda|default:'' }}"
+               autocomplete="off"
+               aria-label="Buscar permiso"
+               placeholder="Buscar por módulo, nombre o por lo que permite...">
+
+    </form>
+
+
+    <!-- ===================== TARJETAS POR MÓDULO ===================== -->
+
+    <div class="row g-4">
+
+        {% for modulo in modulos %}
+            <div class="col-12 col-lg-6 col-xxl-4 pm-modulo">
+                <article class="card h-100 pm-card">
+                    <div class="card-body d-flex flex-column">
+
+                        <!-- Ícono y cantidad de permisos -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="pm-icono" aria-hidden="true">
+                                <svg class="pm-svg"><use href="#{{ modulo.icono }}"></use></svg>
+                            </span>
+
+                            <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle pm-insignia">
+                                {{ modulo.permisos|length }} permiso{{ modulo.permisos|length|pluralize }}
+                            </span>
+                        </div>
+
+                        <!-- Nombre del módulo -->
+                        <h2 class="pm-titulo mb-1">{{ modulo.nombre }}</h2>
+                        <p class="small text-body-secondary mb-3">
+                            {% if modulo.cantidad_perfiles %}
+                                Asignado a {{ modulo.cantidad_perfiles }} perfil{{ modulo.cantidad_perfiles|pluralize:"es" }}
+                            {% else %}
+                                Todavía no está asignado a ningún perfil
+                            {% endif %}
+                        </p>
+
+                        <!-- Permisos del módulo -->
+                        <ul class="list-unstyled mb-0 pm-lista">
+                            {% for permiso in modulo.permisos %}
+                                <li class="pm-permiso">
+                                    <svg class="pm-check" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M20 6 9 17l-5-5"/>
+                                    </svg>
+
+                                    <div class="pm-permiso-texto">
+                                        <div class="perm-name">{{ permiso.nombre }}</div>
+                                        <div class="perm-desc">{{ permiso.descripcion }}</div>
+
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            {% if not permiso.sincronizado %}
+                                                <span class="badge rounded-pill text-bg-light border">Pendiente de sincronizar</span>
+                                            {% else %}
+                                                {% for perfil in permiso.perfiles %}
+                                                    <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle">
+                                                        {{ perfil.Nombre_perfil }}
+                                                    </span>
+                                                {% empty %}
+                                                    <span class="badge rounded-pill pm-sin-perfil">Ningún perfil</span>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+
+                    </div>
+                </article>
+            </div>
+
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-light text-center border mb-0">
+                    No se encontraron permisos{% if busqueda %} para "{{ busqueda }}"{% endif %}.
+                </div>
+            </div>
+        {% endfor %}
+
+    </div>
+
+    <div class="alert alert-light text-center border mt-4 mb-0" id="pmSinResultados" hidden>
+        No se encontraron permisos para la búsqueda realizada.
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+    /* Buscador: filtra mientras se escribe, igual que en las demás pantallas. */
+    (function () {
+        const campo = document.getElementById('buscarPermiso');
+        const vacio = document.getElementById('pmSinResultados');
+        if (!campo) return;
+
+        const normalizar = (s) => (s || '').toLowerCase()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+        function filtrar() {
+            const q = normalizar(campo.value.trim());
+            let visibles = 0;
+
+            document.querySelectorAll('.pm-modulo').forEach(function (col) {
+                const modulo = normalizar(col.querySelector('.pm-titulo').textContent);
+                const coincideModulo = !q || modulo.includes(q);
+                let permisosVisibles = 0;
+
+                col.querySelectorAll('.pm-permiso').forEach(function (li) {
+                    const ok = coincideModulo || normalizar(li.textContent).includes(q);
+                    li.hidden = !ok;
+                    if (ok) permisosVisibles++;
+                });
+
+                col.hidden = permisosVisibles === 0;
+                if (!col.hidden) visibles++;
+            });
+
+            if (vacio) vacio.hidden = visibles > 0 || !document.querySelector('.pm-modulo');
+        }
+
+        campo.addEventListener('input', filtrar);
+        filtrar();
+    })();
+</script>
+{% endblock %}

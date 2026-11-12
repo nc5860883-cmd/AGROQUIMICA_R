@@ -1,0 +1,867 @@
+{% extends 'inventario/base.html' %}
+{# Esta pantalla muestra sus propios mensajes. #}
+{% block mensajes %}{% endblock %}
+{% load static %}
+
+{% block title %}
+    Gestión de Usuarios - Agroquímica del Valle
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/usuarios.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/paginacion.css' %}">
+{% endblock %}
+
+{% block contenido %}
+
+<!-- ==========================================
+     MENSAJES DJANGO
+     ========================================== -->
+
+<div class="us-toasts" id="toastContainer">
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="us-toast {% if message.tags %}{{ message.tags }}{% else %}success{% endif %}"
+                 id="toast-{{ forloop.counter }}">
+
+                <span>{{ message }}</span>
+
+                <span class="us-toast-x" onclick="cerrarToast('toast-{{ forloop.counter }}')">✕</span>
+
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+</div>
+
+
+<div class="us-page">
+
+    <!-- ==========================================
+         ENCABEZADO
+         ========================================== -->
+
+    <header class="us-header">
+
+        <div>
+            <h1 class="us-title">Gestión de usuarios</h1>
+            <p class="av-subtitulo">Cuentas de acceso al sistema, con su perfil y su estado.</p>
+        </div>
+        {% if perm.usuarios_gestionar %}
+        <button type="button" class="us-btn us-btn-primary" onclick="abrirModalCrear()">
+            <svg class="us-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo usuario
+        </button>
+        {% endif %}
+    </header>
+
+
+    {% include 'inventario/_resumen.html' %}
+
+    <!-- ==========================================
+         BUSCADOR
+         ========================================== -->
+
+    <form method="GET" action="{% url 'gestion_usuarios' %}" class="us-search">
+
+        <svg class="us-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+
+        <input class="form-control" type="text" name="q" value="{{ busqueda }}"
+               placeholder="Buscar por nombre, usuario, DNI o correo...">
+
+    </form>
+
+
+    <!-- ==========================================
+         TABLA DE USUARIOS
+         ========================================== -->
+
+    <section class="us-card">
+
+        <div class="us-table-wrap">
+
+            <table class="table table-hover align-middle av-filas us-table">
+
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre y apellido</th>
+                        <th>DNI</th>
+                        <th>Email</th>
+                        <th>Perfil</th>
+                        <th>Estado</th>
+                        <th>Última modificación</th>
+                        <th>Fecha de baja</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="listaUsuarios">
+
+                    {% for usuario in usuarios %}
+
+                        <tr class="us-fila">
+
+                           <td>
+                                <div class="us-usuario-celda">
+                                    {% if ver_fotos %}
+                                        {% if usuario.Foto_usuario %}
+                                            <img class="us-avatar"
+                                                src="{{ usuario.Foto_usuario.url }}"
+                                                alt="Foto de {{ usuario.Usuario }}"
+                                                loading="lazy">
+                                        {% else %}
+                                            <span class="us-avatar us-avatar-inicial">
+                                                {{ usuario.Email_usuario|slice:":1"|upper }}
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+
+                                    <span class="us-username">{{ usuario.Usuario }}</span>
+                                </div>
+                            </td>
+
+                            <td>{{ usuario.Nombre_usuario }} {{ usuario.Apellido_usuario }}</td>
+
+                            <td class="us-muted">{{ usuario.DNI }}</td>
+
+                            <td class="us-muted">{{ usuario.Email_usuario }}</td>
+
+                            <td class="us-muted">{{ usuario.ID_Perfil.Nombre_perfil }}</td>
+
+                            <td>
+                                {% if usuario.Estado_usuario %}
+                                    <span class="us-badge us-activo">Activo</span>
+                                {% else %}
+                                    <span class="us-badge us-inactivo">Inactivo</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="us-muted">{{ usuario.Fecha_ultima_modificacion|date:"Y-m-d" }}</td>
+
+                            <td class="us-muted">
+                                {% if usuario.Fecha_Baja %}
+                                    {{ usuario.Fecha_Baja|date:"Y-m-d" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+
+
+                            <!-- ACCIONES -->
+
+                            <td>
+                                <div class="us-acciones">
+                                    {% if perm.usuarios_gestionar %}
+                                    <!-- EDITAR -->
+                                    <button type="button" class="us-icon-btn" title="Editar usuario" aria-label="Editar usuario"
+                                        onclick="abrirModalEditar(
+                                            '{{ usuario.ID_Usuario }}',
+                                            '{{ usuario.ID_Perfil.ID_Perfil }}',
+                                            '{{ usuario.ID_Perfil.Nombre_perfil|escapejs }}',
+                                            '{{ usuario.DNI }}',
+                                            '{{ usuario.Usuario|escapejs }}',
+                                            '{{ usuario.Apellido_usuario|escapejs }}',
+                                            '{{ usuario.Nombre_usuario|escapejs }}',
+                                            '{{ usuario.Email_usuario|escapejs }}',
+                                            '{{ usuario.Estado_usuario }}',
+                                            '{{ usuario.Fecha_ultima_modificacion|date:"Y-m-d" }}'
+                                        )">
+                                        <svg class="us-icon" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                                    </button>
+
+
+                                    <!-- RESTABLECER CONTRASEÑA -->
+                                    <button type="button" class="us-icon-btn" title="Restablecer contraseña" aria-label="Restablecer contraseña"
+                                        onclick="abrirModalRestablecer(
+                                            '{{ usuario.ID_Usuario }}',
+                                            '{{ usuario.Usuario|escapejs }}',
+                                            '{{ usuario.Email_usuario|escapejs }}',
+                                            '{{ usuario.Estado_usuario|yesno:"1,0" }}'
+                                        )">
+                                        <svg class="us-icon" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+                                    </button>
+
+
+                                    <!-- DAR DE BAJA -->
+                                    {% if usuario.Estado_usuario %}
+
+                                        {% if usuario.ID_Usuario != usuario_actual.ID_Usuario %}
+
+                                            <button type="button" class="us-icon-btn us-peligro" title="Dar de baja" aria-label="Dar de baja"
+                                                onclick="abrirModalBaja(
+                                                    '{{ usuario.ID_Usuario }}',
+                                                    '{{ usuario.ID_Perfil.ID_Perfil }}',
+                                                    '{{ usuario.ID_Perfil.Nombre_perfil|escapejs }}',
+                                                    '{{ usuario.DNI }}',
+                                                    '{{ usuario.Usuario|escapejs }}',
+                                                    '{{ usuario.Apellido_usuario|escapejs }}',
+                                                    '{{ usuario.Nombre_usuario|escapejs }}',
+                                                    '{{ usuario.Email_usuario|escapejs }}',
+                                                    '{{ usuario.Fecha_ultima_modificacion|date:"Y-m-d" }}',
+                                                    '{% if usuario.Fecha_Baja %}{{ usuario.Fecha_Baja|date:"Y-m-d" }}{% else %}—{% endif %}',
+                                                    '{% url 'dar_baja_usuario' usuario.ID_Usuario %}'
+                                                )">
+                                                <svg class="us-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+                                            </button>
+
+                                        {% endif %}
+
+                                    {% else %}
+
+                                        <form method="POST"
+                                              action="{% url 'activar_usuario' usuario.ID_Usuario %}"
+                                              class="us-form-inline">
+
+                                            {% csrf_token %}
+
+                                            <button type="submit"
+                                                    class="us-icon-btn us-activar"
+                                                    title="Activar usuario"
+                                                    aria-label="Activar usuario">
+
+                                                <svg class="us-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+
+                                            </button>
+
+                                        </form>
+
+
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="9" class="us-vacio">No hay usuarios registrados.</td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- PAGINACIÓN (la arma paginacion.js) -->
+        <nav class="pg" id="paginacionUsuarios" aria-label="Paginación" hidden></nav>
+
+        <div class="us-pie">
+            {{ usuarios|length }} registro{{ usuarios|length|pluralize }} encontrado{{ usuarios|length|pluralize }}
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL REGISTRAR USUARIO
+     ========================================== -->
+
+<div class="us-modal" id="modalCrear">
+
+    <div class="us-modal-box">
+
+        <div class="us-modal-head">
+            <h2>Registrar usuario</h2>
+            <button type="button" class="us-modal-x" onclick="cerrarModalCrear()" aria-label="Cerrar">
+                <svg class="us-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <form method="POST" action="{% url 'crear_usuario' %}" id="formCrearUsuario">
+
+            {% csrf_token %}
+
+            <div class="us-grid">
+
+                <div class="us-grupo">
+                    <label>Nombre</label>
+                    <input class="form-control" type="text" name="Nombre_usuario" required>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Apellido</label>
+                    <input class="form-control" type="text" name="Apellido_usuario" required>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>DNI</label>
+                    <input class="form-control" type="number" name="DNI" required>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Perfil de acceso</label>
+                    <select class="form-select" name="ID_Perfil" required>
+                        <option value="">Seleccionar perfil</option>
+                        {% for perfil in perfiles %}
+                            <option value="{{ perfil.ID_Perfil }}">{{ perfil.Nombre_perfil }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Nombre de usuario</label>
+                    <input class="form-control" type="text" id="Usuario_preview"
+                           placeholder="Se genera a partir del apellido y nombre" readonly>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Contraseña</label>
+                    <input class="form-control" type="password"
+                           name="Contrasena"
+                           autocomplete="new-password"
+                           minlength="8"
+                           pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]{8,}"
+                           title="Mínimo 8 caracteres, con al menos una mayúscula, una minúscula y un número, sin espacios."
+                           required>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Email</label>
+
+                    <input class="form-control" type="email" name="Email_usuario" placeholder="usuario@agrovalle.com" required>
+                </div>
+
+            </div>
+
+            <div class="us-modal-pie">
+                <button type="button" class="us-btn us-btn-claro" onclick="cerrarModalCrear()">Cancelar</button>
+                <button type="submit" class="us-btn us-btn-primary">Guardar</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL MODIFICAR USUARIO
+     ========================================== -->
+
+<div class="us-modal" id="modalEditar">
+
+    <div class="us-modal-box us-ancho">
+
+        <div class="us-modal-head">
+            <h2>Modificar usuario</h2>
+            <button type="button" class="us-modal-x" onclick="cerrarModalEditar()" aria-label="Cerrar">
+                <svg class="us-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <form method="POST" id="formEditarUsuario">
+
+            {% csrf_token %}
+
+            <div class="us-grid">
+
+                <div class="us-grupo">
+                    <label>ID_usuario</label>
+                    <input class="form-control" type="text" id="editar_ID_Usuario" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Perfil</label>
+                    <input class="form-control" type="text" id="editar_ID_Perfil" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>DNI</label>
+                    <input class="form-control" type="text" id="editar_DNI" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Usuario</label>
+                    <input class="form-control" type="text" id="editar_Usuario" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Apellido</label>
+                    <input class="form-control" type="text" id="editar_Apellido" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Nombre</label>
+                    <input class="form-control" type="text" id="editar_Nombre" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Estado</label>
+                    <input class="form-control" type="text" id="editar_Estado" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Última modificación</label>
+                    <input class="form-control" type="text" id="editar_Fecha" readonly>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Email</label>
+                    <input class="form-control" type="email" name="Email_usuario" id="editar_Email" required>
+                </div>
+
+            </div>
+
+            <div class="us-modal-pie">
+                <button type="button" class="us-btn us-btn-claro" onclick="cerrarModalEditar()">Cancelar</button>
+                <button type="submit" class="us-btn us-btn-primary">Actualizar</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL RESTABLECER CONTRASEÑA
+     ========================================== -->
+
+<div class="us-modal" id="modalRestablecer">
+
+    <div class="us-modal-box">
+
+        <div class="us-modal-head">
+            <h2>Restablecer contraseña</h2>
+            <button type="button" class="us-modal-x" onclick="cerrarModalRestablecer()" aria-label="Cerrar">
+                <svg class="us-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="us-info us-full">
+            Usuario: <strong id="restablecerUsuario"></strong>
+        </div>
+
+        <!-- OPCIÓN 1: ENVIAR ENLACE POR CORREO (RECOMENDADO) -->
+        <form method="POST" id="formEnviarEnlace" class="us-opcion-reset">
+
+            {% csrf_token %}
+
+            <h3 class="us-opcion-titulo">Enviar enlace por correo <span class="us-recomendado">Recomendado</span></h3>
+            <p class="us-opcion-texto">
+                El usuario recibe un enlace en <strong id="restablecerEmail"></strong> para crear su propia contraseña. Vence en 1 hora.
+            </p>
+            <p class="us-opcion-aviso" id="restablecerAvisoEnlace"></p>
+
+            <div class="us-opcion-accion">
+                <button type="submit" class="us-btn us-btn-primary" id="btnEnviarEnlace">Enviar enlace</button>
+            </div>
+
+        </form>
+
+        <div class="us-separador"><span>o</span></div>
+
+        <!-- OPCIÓN 2: ASIGNAR CONTRASEÑA TEMPORAL -->
+        <form method="POST" id="formRestablecer" class="us-opcion-reset">
+
+            {% csrf_token %}
+
+            <h3 class="us-opcion-titulo">Asignar contraseña temporal</h3>
+            <p class="us-opcion-texto">Úsela si el usuario no tiene acceso a su correo. Deberá cambiarla en su próximo ingreso.</p>
+
+            <div class="us-grid">
+
+                <div class="us-grupo us-full">
+                    <label>Nueva contraseña</label>
+                    <input class="form-control" type="password"
+                           name="nueva_contrasena"
+                           autocomplete="new-password"
+                           minlength="8"
+                           pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]{8,}"
+                           title="Mínimo 8 caracteres, con al menos una mayúscula, una minúscula y un número, sin espacios."
+                           required>
+                    <span class="us-hint">Mínimo 8 caracteres, con mayúscula, minúscula y número. No puede contener el nombre de usuario.</span>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Confirmar contraseña</label>
+                    <input class="form-control" type="password"
+                           name="confirmar_contrasena"
+                           autocomplete="new-password"
+                           minlength="8"
+                           required>
+                </div>
+
+            </div>
+
+            <div class="us-modal-pie">
+                <button type="button" class="us-btn us-btn-claro" onclick="cerrarModalRestablecer()">Cancelar</button>
+                <button type="submit" class="us-btn us-btn-primary">Asignar contraseña</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL DAR DE BAJA USUARIO
+     ========================================== -->
+
+<div class="us-modal" id="modalBaja">
+
+    <div class="us-modal-box us-ancho">
+
+        <div class="us-modal-head">
+            <h2>Dar de baja usuario</h2>
+            <button type="button" class="us-modal-x" onclick="cerrarModalBaja()" aria-label="Cerrar">
+                <svg class="us-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <form method="POST" id="formBajaUsuario">
+
+            {% csrf_token %}
+
+            <div class="us-grid">
+
+                <div class="us-grupo">
+                    <label>ID_usuario</label>
+                    <input class="form-control" type="text" id="baja_ID_Usuario" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Perfil</label>
+                    <input class="form-control" type="text" id="baja_ID_Perfil" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>DNI</label>
+                    <input class="form-control" type="text" id="baja_DNI" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Usuario</label>
+                    <input class="form-control" type="text" id="baja_Usuario" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Apellido</label>
+                    <input class="form-control" type="text" id="baja_Apellido" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Nombre</label>
+                    <input class="form-control" type="text" id="baja_Nombre" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Email</label>
+                    <input class="form-control" type="email" id="baja_Email" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Estado</label>
+                    <input class="form-control" type="text" id="baja_Estado" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Última modificación</label>
+                    <input class="form-control" type="text" id="baja_Fecha_Modificacion" readonly>
+                </div>
+
+                <div class="us-grupo">
+                    <label>Fecha de baja actual</label>
+                    <input class="form-control" type="text" id="baja_Fecha_Actual" readonly>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Fecha de baja a registrar</label>
+                    <input class="form-control" type="text" id="baja_Fecha_Registrar" readonly>
+                </div>
+
+                <div class="us-info us-alerta us-full">
+                    <strong>Importante:</strong> el usuario quedará inactivo y no podrá ingresar al sistema.
+                </div>
+
+            </div>
+
+            <div class="us-modal-pie">
+                <button type="button" class="us-btn us-btn-claro" onclick="cerrarModalBaja()">Cancelar</button>
+                <button type="submit" class="us-btn us-btn-peligro">Dar de baja</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     JAVASCRIPT
+     ========================================== -->
+
+<script src="{% static 'inventario/js/paginacion.js' %}"></script>
+
+<script>
+
+/* PAGINACIÓN (en el navegador) */
+
+Paginador({
+    contenedor: document.getElementById('listaUsuarios'),
+    items: '.us-fila',
+    nav: document.getElementById('paginacionUsuarios'),
+    clave: 'usuarios',
+    subirA: document.querySelector('.us-search'),
+});
+
+
+/* MENSAJES */
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.us-toast').forEach(function (toast) {
+        setTimeout(function () { toast.remove(); }, 4000);
+    });
+
+});
+
+
+function cerrarToast(id) {
+
+    const toast = document.getElementById(id);
+
+    if (toast) {
+        toast.remove();
+    }
+
+}
+
+
+/* MODAL NUEVO USUARIO */
+
+function abrirModalCrear() {
+
+    document.getElementById('modalCrear').style.display = 'flex';
+
+}
+
+
+function cerrarModalCrear() {
+
+    document.getElementById('modalCrear').style.display = 'none';
+
+    const form = document.getElementById('formCrearUsuario');
+
+    if (form) {
+        form.reset();
+    }
+
+    const usuarioPreview = document.getElementById('Usuario_preview');
+
+    if (usuarioPreview) {
+        usuarioPreview.value = '';
+    }
+
+}
+
+
+/* MODAL MODIFICAR USUARIO */
+
+function abrirModalEditar(
+    idUsuario,
+    idPerfil,
+    nombrePerfil,
+    dni,
+    usuario,
+    apellido,
+    nombre,
+    email,
+    estado,
+    fecha
+) {
+
+    document.getElementById('editar_ID_Usuario').value = idUsuario;
+    document.getElementById('editar_ID_Perfil').value = idPerfil + ' — ' + nombrePerfil;
+    document.getElementById('editar_DNI').value = dni;
+    document.getElementById('editar_Usuario').value = usuario;
+    document.getElementById('editar_Apellido').value = apellido;
+    document.getElementById('editar_Nombre').value = nombre;
+    document.getElementById('editar_Email').value = email;
+    document.getElementById('editar_Estado').value = estado === 'True' ? 'Activo' : 'Inactivo';
+    document.getElementById('editar_Fecha').value = fecha;
+
+    document.getElementById('formEditarUsuario').action = '/usuarios/editar/' + idUsuario + '/';
+
+    document.getElementById('modalEditar').style.display = 'flex';
+
+}
+
+
+function cerrarModalEditar() {
+
+    document.getElementById('modalEditar').style.display = 'none';
+
+}
+
+
+/* MODAL RESTABLECER CONTRASEÑA */
+
+function abrirModalRestablecer(idUsuario, nombreUsuario, emailUsuario, activo) {
+
+    document.getElementById('restablecerUsuario').textContent = nombreUsuario;
+
+    document.getElementById('restablecerEmail').textContent = emailUsuario || 'sin correo';
+
+    document.getElementById('formRestablecer').action = '/usuarios/restablecer/' + idUsuario + '/';
+
+    document.getElementById('formEnviarEnlace').action = '/usuarios/enviar-enlace/' + idUsuario + '/';
+
+    const aviso = document.getElementById('restablecerAvisoEnlace');
+    const boton = document.getElementById('btnEnviarEnlace');
+
+    let motivo = '';
+
+    if (!emailUsuario) {
+        motivo = 'El usuario no tiene un correo registrado.';
+    } else if (activo !== '1') {
+        motivo = 'El usuario está dado de baja. Actívelo para enviarle el enlace.';
+    }
+
+    aviso.textContent = motivo;
+    aviso.classList.toggle('us-visible', motivo !== '');
+    boton.disabled = motivo !== '';
+
+    document.getElementById('modalRestablecer').style.display = 'flex';
+
+}
+
+
+function cerrarModalRestablecer() {
+
+    document.getElementById('modalRestablecer').style.display = 'none';
+
+    const form = document.getElementById('formRestablecer');
+
+    if (form) {
+        form.reset();
+    }
+
+}
+
+
+/* MODAL DAR DE BAJA */
+
+function abrirModalBaja(
+    idUsuario,
+    idPerfil,
+    nombrePerfil,
+    dni,
+    usuario,
+    apellido,
+    nombre,
+    email,
+    fechaModificacion,
+    fechaBaja,
+    urlBaja
+) {
+
+    document.getElementById('baja_ID_Usuario').value = idUsuario;
+    document.getElementById('baja_ID_Perfil').value = idPerfil + ' — ' + nombrePerfil;
+    document.getElementById('baja_DNI').value = dni;
+    document.getElementById('baja_Usuario').value = usuario;
+    document.getElementById('baja_Apellido').value = apellido;
+    document.getElementById('baja_Nombre').value = nombre;
+    document.getElementById('baja_Email').value = email;
+    document.getElementById('baja_Estado').value = 'Activo';
+    document.getElementById('baja_Fecha_Modificacion').value = fechaModificacion;
+    document.getElementById('baja_Fecha_Actual').value = fechaBaja;
+
+    const fechaHoy = new Date();
+    const dia = String(fechaHoy.getDate()).padStart(2, '0');
+    const mes = String(fechaHoy.getMonth() + 1).padStart(2, '0');
+    const anio = fechaHoy.getFullYear();
+
+    document.getElementById('baja_Fecha_Registrar').value = dia + '/' + mes + '/' + anio;
+
+    document.getElementById('formBajaUsuario').action = urlBaja;
+
+    document.getElementById('modalBaja').style.display = 'flex';
+
+}
+
+
+function cerrarModalBaja() {
+
+    document.getElementById('modalBaja').style.display = 'none';
+
+}
+
+
+/* CERRAR MODALES AL HACER CLIC AFUERA
+   (addEventListener para no pisar los eventos del menú de base.html) */
+
+window.addEventListener('click', function (event) {
+
+    if (event.target === document.getElementById('modalCrear'))       cerrarModalCrear();
+    if (event.target === document.getElementById('modalEditar'))      cerrarModalEditar();
+    if (event.target === document.getElementById('modalRestablecer')) cerrarModalRestablecer();
+    if (event.target === document.getElementById('modalBaja'))        cerrarModalBaja();
+
+});
+
+
+/* GENERAR USUARIO AUTOMÁTICAMENTE: APELLIDO + PRIMERA LETRA DEL NOMBRE */
+
+const apellidoInput = document.querySelector('input[name="Apellido_usuario"]');
+const nombreInput = document.querySelector('input[name="Nombre_usuario"]');
+const usuarioPreview = document.getElementById('Usuario_preview');
+
+
+function generarUsuario() {
+
+    if (!apellidoInput || !nombreInput || !usuarioPreview) {
+        return;
+    }
+
+    const apellido = apellidoInput.value
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    const nombre = nombreInput.value
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    if (apellido && nombre) {
+        usuarioPreview.value = (apellido + nombre.charAt(0))
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '')
+            .slice(0, 50);
+    } else {
+        usuarioPreview.value = '';
+    }
+
+}
+
+
+if (apellidoInput) {
+    apellidoInput.addEventListener('input', generarUsuario);
+}
+
+if (nombreInput) {
+    nombreInput.addEventListener('input', generarUsuario);
+}
+
+</script>
+
+{% endblock %}

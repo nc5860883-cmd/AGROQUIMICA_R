@@ -1,0 +1,1473 @@
+{% extends 'inventario/base.html' %}
+{# Esta pantalla muestra sus propios mensajes. #}
+{% block mensajes %}{% endblock %}
+{% load static %}
+
+{% block title %}
+    Gestión de Proveedores - Agroquímica del Valle
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/proveedores.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/paginacion.css' %}">
+{% endblock %}
+
+{% block contenido %}
+
+<!-- MENSAJES DJANGO -->
+<div class="pv-toasts" id="toastContainer">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="pv-toast {% if message.tags %}{{ message.tags }}{% else %}success{% endif %}"
+                 id="toast-{{ forloop.counter }}">
+                <span>{{ message }}</span>
+                <span class="pv-toast-x"
+                      onclick="cerrarToast('toast-{{ forloop.counter }}')">✕</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+
+<div class="pv-page">
+
+    <!-- ENCABEZADO -->
+    <header class="pv-header">
+        <div>
+            <h1 class="pv-title">Gestión de proveedores</h1>
+            <p class="av-subtitulo">Datos de contacto y estado de los proveedores con los que trabaja la empresa.</p>
+        </div>
+
+        {% if perm.proveedores_gestionar %}
+            <button type="button"
+                    class="pv-btn pv-btn-primary"
+                    onclick="abrirModalCrear()">
+                <svg class="pv-icon" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Nuevo proveedor
+            </button>
+        {% endif %}
+    </header>
+
+
+    {% include 'inventario/_resumen.html' %}
+
+    <!-- BUSCADOR -->
+    <form method="GET" onsubmit="return false;" class="pv-search">
+
+        <svg class="pv-icon" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4.3-4.3"/>
+        </svg>
+
+        <input class="form-control" type="text"
+               id="searchInput"
+               name="q"
+               value="{{ busqueda|default:'' }}"
+               onkeyup="filtrarProveedores()"
+               placeholder="Buscar por nombre, teléfono, correo o dirección...">
+
+    </form>
+
+
+    <!-- TABLA DE PROVEEDORES -->
+    <section class="pv-card">
+
+        <div class="pv-table-wrap">
+
+            <table class="table table-hover align-middle av-filas pv-table">
+
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                        <th>Dirección</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="listaProveedores">
+
+                    {% for p in proveedores %}
+
+                        <tr id="card-{{ p.pk }}"
+                            class="supplier-card {% if not p.estado_proveedor %}inactivo{% endif %}"
+                            data-search="{{ p.nombre_proveedor|lower }} {{ p.email_proveedor|default:''|lower }} {{ p.direccion_proveedor|default:''|lower }} {{ p.telefono_proveedor|default:''|lower }}">
+
+                            <td>
+                                <span class="pv-nombre">
+                                    {{ p.nombre_proveedor }}
+                                </span>
+                            </td>
+
+                            <td class="pv-muted">
+                                {{ p.telefono_proveedor|default:"—" }}
+                            </td>
+
+                            <td class="pv-muted">
+                                {{ p.email_proveedor|default:"—" }}
+                            </td>
+
+                            <td class="pv-muted pv-dir">
+                                {{ p.direccion_proveedor|default:"—" }}
+                            </td>
+
+                            <td>
+                                <span id="badge-estado-{{ p.pk }}"
+                                      class="pv-badge {% if p.estado_proveedor %}pv-activo{% else %}pv-inactivo{% endif %}">
+                                    {% if p.estado_proveedor %}
+                                        Activo
+                                    {% else %}
+                                        Inactivo
+                                    {% endif %}
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="pv-acciones">
+
+                                    {% if perm.proveedores_gestionar %}
+
+                                        <!-- EDITAR -->
+                                        <button type="button"
+                                                class="pv-accion pv-accion-icono"
+                                                title="Editar proveedor"
+                                                aria-label="Editar proveedor"
+                                                onclick="abrirModalEditar(
+                                                    '{{ p.pk }}',
+                                                    '{{ p.nombre_proveedor|escapejs }}',
+                                                    '{{ p.telefono_proveedor|default:''|escapejs }}',
+                                                    '{{ p.email_proveedor|default:''|escapejs }}',
+                                                    '{{ p.direccion_proveedor|default:''|escapejs }}'
+                                                )">
+
+                                            <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+
+                                        </button>
+
+
+                                        <!-- DAR DE BAJA / ACTIVAR -->
+                                        <form id="form-estado-{{ p.pk }}"
+                                              method="POST"
+                                              action="{% url 'cambiar_estado_proveedor' p.pk %}"
+                                              onsubmit="return procesarSolicitudEstado(
+                                                  event,
+                                                  '{{ p.pk }}',
+                                                  '{{ p.nombre_proveedor|escapejs }}',
+                                                  '{{ p.telefono_proveedor|default:'--'|escapejs }}',
+                                                  '{{ p.email_proveedor|default:'--'|escapejs }}',
+                                                  '{{ p.direccion_proveedor|default:'--'|escapejs }}'
+                                              )">
+
+                                            {% csrf_token %}
+
+                                            <input type="hidden"
+                                                   name="estado"
+                                                   id="estado-{{ p.pk }}"
+                                                   value="{% if p.estado_proveedor %}inactivo{% else %}activo{% endif %}">
+
+                                            <button type="submit"
+                                                    id="btn-estado-{{ p.pk }}"
+                                                    class="pv-accion pv-accion-icono {% if p.estado_proveedor %}pv-baja{% else %}pv-activar{% endif %}"
+                                                    title="{% if p.estado_proveedor %}Dar de baja{% else %}Activar{% endif %}"
+                                                    aria-label="{% if p.estado_proveedor %}Dar de baja proveedor{% else %}Activar proveedor{% endif %}">
+
+                                                {% if p.estado_proveedor %}
+
+                                                    <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                        <circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>
+                                                    </svg>
+
+                                                {% else %}
+
+                                                    <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                        <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+                                                    </svg>
+
+                                                {% endif %}
+
+                                            </button>
+
+                                        </form>
+
+
+                                        <!-- ELIMINAR (solo si no tiene productos ni remitos) -->
+                                        {% if p.eliminable %}
+
+                                            <button type="button"
+                                                    class="pv-accion pv-accion-icono pv-baja"
+                                                    title="Eliminar proveedor"
+                                                    aria-label="Eliminar proveedor"
+                                                    onclick="abrirModalEliminar(
+                                                        '{{ p.pk }}',
+                                                        '{{ p.nombre_proveedor|escapejs }}',
+                                                        '{{ p.telefono_proveedor|default:''|escapejs }}',
+                                                        '{{ p.email_proveedor|default:''|escapejs }}',
+                                                        '{{ p.direccion_proveedor|default:''|escapejs }}'
+                                                    )">
+
+                                                <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+
+                                            </button>
+
+                                        {% else %}
+
+                                            <!-- El span muestra el motivo: los botones deshabilitados no reciben el hover. -->
+                                            <span title="{{ p.motivo_no_eliminable }}" style="display:inline-flex; cursor:not-allowed;">
+                                                <button type="button"
+                                                        class="pv-accion pv-accion-icono pv-baja"
+                                                        aria-label="{{ p.motivo_no_eliminable }}"
+                                                        style="pointer-events:none;"
+                                                        disabled>
+
+                                                    <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+
+                                                </button>
+                                            </span>
+
+                                        {% endif %}
+
+                                    {% endif %}
+
+                                </div>
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="6" class="pv-vacio">
+                                No se encontraron proveedores.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- PAGINACIÓN -->
+        <nav class="pg"
+             id="paginacionProveedores"
+             aria-label="Paginación"
+             hidden>
+        </nav>
+
+        <div class="pv-pie">
+
+            <span id="contadorProveedores">
+                {{ proveedores|length }}
+                registro{{ proveedores|length|pluralize }}
+                encontrado{{ proveedores|length|pluralize }}
+            </span>
+
+            <span>Agroquímica del Valle</span>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL CONFIRMAR BAJA
+========================================== -->
+
+<div class="pv-modal" id="modalConfirmarBaja">
+
+    <div class="pv-modal-box"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloConfirmarBaja">
+
+        <div class="pv-modal-head">
+
+            <h2 id="tituloConfirmarBaja">Confirmar estado inactivo</h2>
+
+            <button type="button"
+                    class="pv-modal-x"
+                    onclick="cancelarBajaProveedor()"
+                    aria-label="Cerrar">
+
+                <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+
+            </button>
+
+        </div>
+
+        <div class="pv-modal-body">
+
+            <div class="pv-aviso">
+
+                <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+                    <path d="M12 9v4"/>
+                    <path d="M12 17h.01"/>
+                </svg>
+
+                <span>
+                    El proveedor quedará inactivo y no podrá utilizarse
+                    para registrar nuevos remitos o productos. Su historial
+                    se conservará y podrá volver a activarse.
+                </span>
+
+            </div>
+
+            <div class="pv-resumen">
+
+                <div class="pv-resumen-cab">
+
+                    <div class="pv-avatar" id="baja_avatar">PV</div>
+
+                    <div>
+                        <h4 id="baja_nombre">Nombre proveedor</h4>
+                        <p>Proveedor registrado</p>
+                    </div>
+
+                </div>
+
+                <div class="pv-resumen-grid">
+
+                    <div class="pv-dato">
+                        <span class="lbl">Teléfono</span>
+                        <span class="val" id="baja_telefono">--</span>
+                    </div>
+
+                    <div class="pv-dato">
+                        <span class="lbl">Email</span>
+                        <span class="val" id="baja_email">--</span>
+                    </div>
+
+                    <div class="pv-dato">
+                        <span class="lbl">Dirección</span>
+                        <span class="val" id="baja_direccion">--</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="pv-modal-pie">
+
+            <button type="button"
+                    class="pv-btn pv-btn-claro"
+                    onclick="cancelarBajaProveedor()">
+                Cancelar
+            </button>
+
+            <button type="button"
+                    class="pv-btn pv-btn-peligro"
+                    id="btnConfirmarBajaEjecutar">
+                Confirmar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL CONFIRMAR ELIMINACIÓN
+========================================== -->
+
+<div class="pv-modal" id="modalEliminarProveedor">
+
+    <div class="pv-modal-box"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloEliminarProveedor">
+
+        <div class="pv-modal-head">
+
+            <h2 id="tituloEliminarProveedor">Confirmar eliminación</h2>
+
+            <button type="button"
+                    class="pv-modal-x"
+                    onclick="cerrarModal('modalEliminarProveedor')"
+                    aria-label="Cerrar">
+
+                <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+
+            </button>
+
+        </div>
+
+        <form id="formEliminarProveedor" method="POST" action="">
+
+            {% csrf_token %}
+
+            <div class="pv-modal-body">
+
+                <div class="pv-aviso">
+
+                    <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+                        <path d="M12 9v4"/>
+                        <path d="M12 17h.01"/>
+                    </svg>
+
+                    <span>
+                        El proveedor será eliminado definitivamente.
+                        Esta acción no se puede deshacer.
+                    </span>
+
+                </div>
+
+                <div class="pv-resumen">
+
+                    <div class="pv-resumen-cab">
+
+                        <div class="pv-avatar" id="eliminar_avatar">PV</div>
+
+                        <div>
+                            <h4 id="eliminar_nombre">Nombre proveedor</h4>
+                            <p>Proveedor registrado</p>
+                        </div>
+
+                    </div>
+
+                    <div class="pv-resumen-grid">
+
+                        <div class="pv-dato">
+                            <span class="lbl">Teléfono</span>
+                            <span class="val" id="eliminar_telefono">--</span>
+                        </div>
+
+                        <div class="pv-dato">
+                            <span class="lbl">Email</span>
+                            <span class="val" id="eliminar_email">--</span>
+                        </div>
+
+                        <div class="pv-dato">
+                            <span class="lbl">Dirección</span>
+                            <span class="val" id="eliminar_direccion">--</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="pv-modal-pie">
+
+                <button type="button"
+                        class="pv-btn pv-btn-claro"
+                        onclick="cerrarModal('modalEliminarProveedor')">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="pv-btn pv-btn-peligro">
+                    Eliminar proveedor
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL EDITAR PROVEEDOR
+========================================== -->
+
+<div class="pv-modal" id="modalEditarProveedor">
+
+    <div class="pv-modal-box"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloEditarProveedor">
+
+        <div class="pv-modal-head">
+
+            <h2 id="tituloEditarProveedor">Modificar proveedor</h2>
+
+            <button type="button"
+                    class="pv-modal-x"
+                    onclick="cerrarModal('modalEditarProveedor')"
+                    aria-label="Cerrar">
+
+                <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+
+            </button>
+
+        </div>
+
+        <form id="formEditarProveedor"
+              method="POST"
+              action="{% if proveedor_editar %}{% url 'editar_proveedor' proveedor_editar.pk %}{% else %}#{% endif %}">
+
+            {% csrf_token %}
+
+            {{ form_editar.non_field_errors }}
+
+            <div class="pv-modal-body pv-grid">
+
+                <div class="pv-grupo pv-full">
+
+                    <label for="edit_nombre">Nombre del proveedor</label>
+
+                    <input type="text"
+                           id="edit_nombre"
+                           name="nombre_proveedor"
+                           maxlength="150"
+                           value="{{ form_editar.nombre_proveedor.value|default_if_none:'' }}"
+                           required
+                           class="form-control {% if form_editar.nombre_proveedor.errors %}is-invalid{% endif %}">
+
+                    {% for error in form_editar.nombre_proveedor.errors %}
+                        <span class="pv-error">{{ error }}</span>
+                    {% endfor %}
+
+                </div>
+
+                <div class="pv-grupo">
+
+                    <label for="edit_telefono">Teléfono</label>
+
+                    <input type="text"
+                           id="edit_telefono"
+                           name="telefono_proveedor"
+                           maxlength="50"
+                           inputmode="tel"
+                           oninput="this.value = this.value.replace(/[^0-9+()\s-]/g, '')"
+                           value="{{ form_editar.telefono_proveedor.value|default_if_none:'' }}"
+                           class="form-control {% if form_editar.telefono_proveedor.errors %}is-invalid{% endif %}">
+
+                    {% for error in form_editar.telefono_proveedor.errors %}
+                        <span class="pv-error">{{ error }}</span>
+                    {% endfor %}
+
+                </div>
+
+                <div class="pv-grupo">
+
+                    <label for="edit_email">Email</label>
+
+                    <input type="email"
+                           id="edit_email"
+                           name="email_proveedor"
+                           value="{{ form_editar.email_proveedor.value|default_if_none:'' }}"
+                           class="form-control {% if form_editar.email_proveedor.errors %}is-invalid{% endif %}">
+
+                    {% for error in form_editar.email_proveedor.errors %}
+                        <span class="pv-error">{{ error }}</span>
+                    {% endfor %}
+
+                </div>
+
+                <div class="pv-grupo pv-full">
+
+                    <label for="edit_direccion">Dirección</label>
+
+                    <input type="text"
+                           id="edit_direccion"
+                           name="direccion_proveedor"
+                           maxlength="255"
+                           value="{{ form_editar.direccion_proveedor.value|default_if_none:'' }}"
+                           class="form-control {% if form_editar.direccion_proveedor.errors %}is-invalid{% endif %}">
+
+                    {% for error in form_editar.direccion_proveedor.errors %}
+                        <span class="pv-error">{{ error }}</span>
+                    {% endfor %}
+
+                </div>
+
+                {{ form_editar.estado_proveedor }}
+
+            </div>
+
+            <div class="pv-modal-pie">
+
+                <button type="button"
+                        class="pv-btn pv-btn-claro"
+                        onclick="cerrarModal('modalEditarProveedor')">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="pv-btn pv-btn-primary">
+                    Guardar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL NUEVO PROVEEDOR
+========================================== -->
+
+<div class="pv-modal" id="modalCrearProveedor">
+
+    <div class="pv-modal-box"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloCrearProveedor">
+
+        <div class="pv-modal-head">
+
+            <h2 id="tituloCrearProveedor">Registrar proveedor</h2>
+
+            <button type="button"
+                    class="pv-modal-x"
+                    onclick="cerrarModal('modalCrearProveedor')"
+                    aria-label="Cerrar">
+
+                <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+
+            </button>
+
+        </div>
+
+        <form method="POST" action="{% url 'crear_proveedor' %}">
+
+            {% csrf_token %}
+
+            {{ form_crear.non_field_errors }}
+
+            <div class="pv-modal-body">
+
+                <div class="pv-grid">
+
+                    <div class="pv-grupo pv-full">
+
+                        <label for="nuevo_nombre">Nombre del proveedor</label>
+
+                        <input type="text"
+                               id="nuevo_nombre"
+                               name="nombre_proveedor"
+                               maxlength="150"
+                               value="{{ form_crear.nombre_proveedor.value|default_if_none:'' }}"
+                               required
+                               class="form-control {% if form_crear.nombre_proveedor.errors %}is-invalid{% endif %}">
+
+                        {% for error in form_crear.nombre_proveedor.errors %}
+                            <span class="pv-error">{{ error }}</span>
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="pv-grupo">
+
+                        <label for="nuevo_telefono">Teléfono</label>
+
+                        <input type="text"
+                               id="nuevo_telefono"
+                               name="telefono_proveedor"
+                               maxlength="50"
+                               inputmode="tel"
+                               oninput="this.value = this.value.replace(/[^0-9+()\s-]/g, '')"
+                               value="{{ form_crear.telefono_proveedor.value|default_if_none:'' }}"
+                               class="form-control {% if form_crear.telefono_proveedor.errors %}is-invalid{% endif %}">
+
+                        {% for error in form_crear.telefono_proveedor.errors %}
+                            <span class="pv-error">{{ error }}</span>
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="pv-grupo">
+
+                        <label for="nuevo_email">Email</label>
+
+                        <input type="email"
+                               id="nuevo_email"
+                               name="email_proveedor"
+                               value="{{ form_crear.email_proveedor.value|default_if_none:'' }}"
+                               class="form-control {% if form_crear.email_proveedor.errors %}is-invalid{% endif %}">
+
+                        {% for error in form_crear.email_proveedor.errors %}
+                            <span class="pv-error">{{ error }}</span>
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="pv-grupo pv-full">
+
+                        <label for="nuevo_direccion">Dirección</label>
+
+                        <input type="text"
+                               id="nuevo_direccion"
+                               name="direccion_proveedor"
+                               maxlength="255"
+                               value="{{ form_crear.direccion_proveedor.value|default_if_none:'' }}"
+                               class="form-control {% if form_crear.direccion_proveedor.errors %}is-invalid{% endif %}">
+
+                        {% for error in form_crear.direccion_proveedor.errors %}
+                            <span class="pv-error">{{ error }}</span>
+                        {% endfor %}
+
+                    </div>
+
+                    {{ form_crear.estado_proveedor }}
+
+                </div>
+
+            </div>
+
+            <div class="pv-modal-pie">
+
+                <button type="button"
+                        class="pv-btn pv-btn-claro"
+                        onclick="cerrarModal('modalCrearProveedor')">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="pv-btn pv-btn-primary">
+                    Guardar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     JAVASCRIPT DE PROVEEDORES
+========================================== -->
+
+<script src="{% static 'inventario/js/paginacion.js' %}"></script>
+
+<script>
+
+    let formPendingState = null;
+    let idPendingState = null;
+    let namePendingState = null;
+
+
+    /* ==========================================
+       PAGINACIÓN
+    ========================================== */
+
+    const pagProveedores = Paginador({
+        contenedor: document.getElementById('listaProveedores'),
+        items: '.supplier-card',
+        nav: document.getElementById('paginacionProveedores'),
+        clave: 'proveedores',
+        subirA: document.querySelector('.pv-search'),
+    });
+
+
+    /* ==========================================
+       NOTIFICACIONES
+    ========================================== */
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        document.querySelectorAll('.pv-toast').forEach(function (toast) {
+            autocerrarToast(toast);
+        });
+
+        filtrarProveedores();
+
+    });
+
+
+    function autocerrarToast(toast) {
+
+        setTimeout(function () {
+
+            if (!toast.isConnected) {
+                return;
+            }
+
+            toast.style.animation = 'pv-fadeout 0.5s ease-out forwards';
+
+            setTimeout(function () {
+                toast.remove();
+            }, 500);
+
+        }, 4000);
+
+    }
+
+
+    function cerrarToast(id) {
+
+        const toast = document.getElementById(id);
+
+        if (toast) {
+
+            toast.style.animation = 'pv-fadeout 0.3s ease-out forwards';
+
+            setTimeout(function () {
+                toast.remove();
+            }, 300);
+
+        }
+
+    }
+
+
+    function mostrarToast(mensaje, tipo) {
+
+        const container = document.getElementById('toastContainer');
+
+        if (!container) {
+            return;
+        }
+
+        const toast = document.createElement('div');
+        const id = 'toast-' + Date.now();
+
+        toast.className = 'pv-toast ' + (tipo || 'warning');
+        toast.id = id;
+
+        const texto = document.createElement('span');
+        texto.textContent = mensaje;
+
+        const cerrar = document.createElement('span');
+        cerrar.className = 'pv-toast-x';
+        cerrar.textContent = '✕';
+        cerrar.setAttribute('role', 'button');
+        cerrar.setAttribute('tabindex', '0');
+        cerrar.setAttribute('aria-label', 'Cerrar notificación');
+
+        cerrar.addEventListener('click', function () {
+            cerrarToast(id);
+        });
+
+        cerrar.addEventListener('keydown', function (evento) {
+
+            if (evento.key === 'Enter' || evento.key === ' ') {
+                evento.preventDefault();
+                cerrarToast(id);
+            }
+
+        });
+
+        toast.appendChild(texto);
+        toast.appendChild(cerrar);
+        container.appendChild(toast);
+
+        autocerrarToast(toast);
+
+    }
+
+
+    /* ==========================================
+       ACTUALIZAR LAS TARJETAS DE ARRIBA (Activos / Inactivos)
+       sin recargar la página.
+
+       1) Busca cada número por data-resumen-valor="activos" (lo pone
+          _resumen.html). Si no lo encuentra, lo busca por el texto
+          de la tarjeta ("Activos", "Inactivos").
+       2) Usa los totales que manda el servidor (datos.resumen). Si el
+          servidor no los manda, suma o resta 1 según la acción.
+    ========================================== */
+
+    function animarNumero(elemento, valorFinal) {
+
+        const inicial = parseInt(elemento.textContent.replace(/\D/g, ''), 10) || 0;
+
+        if (inicial === valorFinal) {
+            return;
+        }
+
+        const duracion = 600;
+        let comienzo = null;
+
+        function paso(marca) {
+
+            if (comienzo === null) {
+                comienzo = marca;
+            }
+
+            const avance = Math.min((marca - comienzo) / duracion, 1);
+            const suave = 1 - Math.pow(1 - avance, 3);
+
+            elemento.textContent = Math.round(inicial + (valorFinal - inicial) * suave);
+
+            if (avance < 1) {
+                requestAnimationFrame(paso);
+            }
+
+        }
+
+        requestAnimationFrame(paso);
+
+        // Pequeño "salto" de la tarjeta para que se note el cambio
+        const tarjeta = elemento.closest('.av-stat') || elemento.parentElement;
+
+        if (tarjeta && tarjeta.animate) {
+            tarjeta.animate(
+                [
+                    { transform: 'scale(1)' },
+                    { transform: 'scale(1.04)' },
+                    { transform: 'scale(1)' }
+                ],
+                { duration: 450, easing: 'ease-out' }
+            );
+        }
+
+    }
+
+
+    function buscarNumeroResumen(clave) {
+
+        // Forma directa: el atributo que pone _resumen.html
+        const directo = document.querySelector('[data-resumen-valor="' + clave + '"]');
+
+        if (directo) {
+            return directo;
+        }
+
+        // Respaldo: buscar la tarjeta por su texto
+        const textos = { activos: 'activos', inactivos: 'inactivos' };
+        const buscado = textos[clave];
+
+        if (!buscado) {
+            return null;
+        }
+
+        const etiquetas = document.querySelectorAll('.av-stat span, .av-stat div, .av-stat p');
+
+        for (const etiqueta of etiquetas) {
+
+            if (etiqueta.children.length === 0 &&
+                etiqueta.textContent.trim().toLowerCase() === buscado) {
+
+                const tarjeta = etiqueta.closest('.av-stat');
+                return tarjeta ? tarjeta.querySelector('strong') : null;
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+
+    function actualizarResumen(resumen, esBaja) {
+
+        let activos;
+        let inactivos;
+
+        const numActivos = buscarNumeroResumen('activos');
+        const numInactivos = buscarNumeroResumen('inactivos');
+
+        if (resumen && typeof resumen.activos === 'number') {
+
+            // Totales exactos calculados por el servidor
+            activos = resumen.activos;
+            inactivos = resumen.inactivos;
+
+        } else {
+
+            // El servidor no mandó los totales: se ajusta en 1
+            const leer = function (el) {
+                return el ? (parseInt(el.textContent.replace(/\D/g, ''), 10) || 0) : 0;
+            };
+
+            activos = leer(numActivos) + (esBaja ? -1 : 1);
+            inactivos = leer(numInactivos) + (esBaja ? 1 : -1);
+
+            console.warn(
+                'El servidor no devolvió "resumen": revisá _resumen_proveedores() en views.py.'
+            );
+
+        }
+
+        if (numActivos) {
+            animarNumero(numActivos, Math.max(activos, 0));
+        } else {
+            console.warn('No se encontró la tarjeta "Activos".');
+        }
+
+        if (numInactivos) {
+            animarNumero(numInactivos, Math.max(inactivos, 0));
+        } else {
+            console.warn('No se encontró la tarjeta "Inactivos".');
+        }
+
+    }
+
+
+    /* ==========================================
+       BUSCADOR
+    ========================================== */
+
+    function filtrarProveedores() {
+
+        const campo = document.getElementById('searchInput');
+        const contador = document.getElementById('contadorProveedores');
+
+        if (!campo || !contador) {
+            return;
+        }
+
+        const query = campo.value.toLowerCase().trim();
+
+        let visibles = 0;
+
+        document.querySelectorAll('.supplier-card').forEach(function (fila) {
+
+            const texto = fila.getAttribute('data-search') || '';
+            const coincide = texto.includes(query);
+
+            fila.dataset.coincide = coincide ? '1' : '0';
+
+            if (coincide) {
+                visibles++;
+            }
+
+        });
+
+        pagProveedores.refrescar(true);
+
+        contador.textContent =
+            visibles + ' registro' + (visibles === 1 ? '' : 's') +
+            ' encontrado' + (visibles === 1 ? '' : 's');
+
+    }
+
+
+    /* ==========================================
+       ABRIR Y CERRAR MODALES
+    ========================================== */
+
+    function abrirModalCrear() {
+
+        const modal = document.getElementById('modalCrearProveedor');
+
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+
+    }
+
+
+    function abrirModalEditar(id, nombre, telefono, email, direccion) {
+
+        const formulario = document.getElementById('formEditarProveedor');
+
+        if (!formulario) {
+            return;
+        }
+
+        const urlBase = "{% url 'editar_proveedor' 0 %}";
+
+        formulario.action = urlBase.replace('/0/', '/' + id + '/');
+
+        document.getElementById('edit_nombre').value = nombre || '';
+        document.getElementById('edit_telefono').value = telefono || '';
+        document.getElementById('edit_email').value = email || '';
+        document.getElementById('edit_direccion').value = direccion || '';
+
+        document.getElementById('modalEditarProveedor').style.display = 'flex';
+
+    }
+
+
+    function abrirModalEliminar(id, nombre, telefono, email, direccion) {
+
+        const formulario = document.getElementById('formEliminarProveedor');
+
+        if (!formulario) {
+            return;
+        }
+
+        const urlBase = "{% url 'eliminar_proveedor' 0 %}";
+
+        formulario.action = urlBase.replace('/0/', '/' + id + '/');
+
+        document.getElementById('eliminar_avatar').textContent =
+            (nombre || 'PV').substring(0, 2).toUpperCase();
+
+        document.getElementById('eliminar_nombre').textContent =
+            nombre || 'Sin nombre';
+
+        document.getElementById('eliminar_telefono').textContent =
+            telefono || '--';
+
+        document.getElementById('eliminar_email').textContent =
+            email || '--';
+
+        document.getElementById('eliminar_direccion').textContent =
+            direccion || '--';
+
+        document.getElementById('modalEliminarProveedor').style.display = 'flex';
+
+    }
+
+
+    function cerrarModal(idModal) {
+
+        const modal = document.getElementById(idModal);
+
+        if (modal) {
+            modal.style.display = 'none';
+        }
+
+    }
+
+
+    function cancelarBajaProveedor() {
+
+        cerrarModal('modalConfirmarBaja');
+
+        formPendingState = null;
+        idPendingState = null;
+        namePendingState = null;
+
+    }
+
+
+    [
+        'modalConfirmarBaja',
+        'modalEliminarProveedor',
+        'modalEditarProveedor',
+        'modalCrearProveedor'
+    ].forEach(function (id) {
+
+        const modal = document.getElementById(id);
+
+        if (!modal) {
+            return;
+        }
+
+        modal.addEventListener('click', function (evento) {
+
+            if (evento.target !== modal) {
+                return;
+            }
+
+            if (id === 'modalConfirmarBaja') {
+                cancelarBajaProveedor();
+            } else {
+                cerrarModal(id);
+            }
+
+        });
+
+    });
+
+
+    document.addEventListener('keydown', function (evento) {
+
+        if (evento.key === 'Escape') {
+
+            cancelarBajaProveedor();
+
+            cerrarModal('modalEliminarProveedor');
+            cerrarModal('modalEditarProveedor');
+            cerrarModal('modalCrearProveedor');
+
+        }
+
+    });
+
+
+    /* ==========================================
+       SOLICITUD DE BAJA O ACTIVACIÓN
+    ========================================== */
+
+    function procesarSolicitudEstado(
+        evento,
+        id,
+        nombre,
+        telefono,
+        email,
+        direccion
+    ) {
+
+        evento.preventDefault();
+
+        const formulario = evento.currentTarget;
+        const boton = document.getElementById('btn-estado-' + id);
+
+        if (!formulario || !boton) {
+
+            mostrarToast(
+                'No se pudo identificar el proveedor seleccionado.',
+                'warning'
+            );
+
+            return false;
+
+        }
+
+        const estaActivo = boton.classList.contains('pv-baja');
+
+        if (estaActivo) {
+
+            formPendingState = formulario;
+            idPendingState = id;
+            namePendingState = nombre;
+
+            document.getElementById('baja_avatar').textContent =
+                (nombre || 'PV').substring(0, 2).toUpperCase();
+
+            document.getElementById('baja_nombre').textContent =
+                nombre || 'Sin nombre';
+
+            document.getElementById('baja_telefono').textContent =
+                telefono || '--';
+
+            document.getElementById('baja_email').textContent =
+                email || '--';
+
+            document.getElementById('baja_direccion').textContent =
+                direccion || '--';
+
+            document.getElementById('modalConfirmarBaja').style.display = 'flex';
+
+        } else {
+
+            ejecutarCambioEstado(formulario, id, nombre, false);
+
+        }
+
+        return false;
+
+    }
+
+
+    /* ==========================================
+       CONFIRMAR BAJA
+    ========================================== */
+
+    document
+        .getElementById('btnConfirmarBajaEjecutar')
+        .addEventListener('click', function () {
+
+            if (!formPendingState) {
+                return;
+            }
+
+            const formulario = formPendingState;
+            const id = idPendingState;
+            const nombre = namePendingState;
+
+            formPendingState = null;
+            idPendingState = null;
+            namePendingState = null;
+
+            cerrarModal('modalConfirmarBaja');
+
+            ejecutarCambioEstado(formulario, id, nombre, true);
+
+        });
+
+
+    /* ==========================================
+       ICONOS
+    ========================================== */
+
+    function iconoBaja() {
+
+        return `
+            <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>
+            </svg>
+        `;
+
+    }
+
+
+    function iconoActivar() {
+
+        return `
+            <svg class="pv-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+            </svg>
+        `;
+
+    }
+
+
+    /* ==========================================
+       CAMBIAR ESTADO DEL PROVEEDOR
+    ========================================== */
+
+    async function ejecutarCambioEstado(
+        formulario,
+        id,
+        nombreProveedor,
+        esBaja
+    ) {
+
+        const boton = document.getElementById('btn-estado-' + id);
+        const badge = document.getElementById('badge-estado-' + id);
+        const fila = document.getElementById('card-' + id);
+        const campoEstado = document.getElementById('estado-' + id);
+
+        if (!boton || !badge || !fila || !campoEstado) {
+
+            mostrarToast(
+                'No se pudo actualizar el estado del proveedor.',
+                'warning'
+            );
+
+            return;
+
+        }
+
+        campoEstado.value = esBaja ? 'inactivo' : 'activo';
+
+        boton.disabled = true;
+
+        try {
+
+            const respuesta = await fetch(formulario.action, {
+
+                method: 'POST',
+
+                body: new FormData(formulario),
+
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+
+                credentials: 'same-origin'
+
+            });
+
+            let datos = null;
+
+            try {
+                datos = await respuesta.json();
+            } catch (e) {
+                datos = null;
+            }
+
+            if (!respuesta.ok || !datos || !datos.ok) {
+
+                throw new Error(
+                    (datos && datos.error) ||
+                    'No se pudo cambiar el estado del proveedor.'
+                );
+
+            }
+
+            // Actualiza las tarjetas de Activos / Inactivos sin recargar
+            actualizarResumen(datos.resumen, esBaja);
+
+            if (esBaja) {
+
+                boton.classList.remove('pv-baja');
+                boton.classList.add('pv-activar');
+
+                boton.innerHTML = iconoActivar();
+
+                boton.title = 'Activar';
+                boton.setAttribute('aria-label', 'Activar proveedor');
+
+                badge.classList.remove('pv-activo');
+                badge.classList.add('pv-inactivo');
+                badge.textContent = 'Inactivo';
+
+                fila.classList.add('inactivo');
+
+                campoEstado.value = 'activo';
+
+                mostrarToast(datos.mensaje, 'warning');
+
+            } else {
+
+                boton.classList.remove('pv-activar');
+                boton.classList.add('pv-baja');
+
+                boton.innerHTML = iconoBaja();
+
+                boton.title = 'Dar de baja';
+                boton.setAttribute('aria-label', 'Dar de baja proveedor');
+
+                badge.classList.remove('pv-inactivo');
+                badge.classList.add('pv-activo');
+                badge.textContent = 'Activo';
+
+                fila.classList.remove('inactivo');
+
+                campoEstado.value = 'inactivo';
+
+                mostrarToast(datos.mensaje, 'success');
+
+            }
+
+        } catch (error) {
+
+            console.error('Error al cambiar el estado:', error);
+
+            campoEstado.value = esBaja ? 'inactivo' : 'activo';
+
+            mostrarToast(error.message, 'error');
+
+        } finally {
+
+            boton.disabled = false;
+
+        }
+
+    }
+
+
+    /* ==========================================
+       REABRIR MODAL SI HAY ERRORES DE VALIDACIÓN
+    ========================================== */
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const modalAbierto = "{{ modal_abierto|default:'' }}";
+
+        if (modalAbierto === 'crear') {
+
+            const modalCrear = document.getElementById('modalCrearProveedor');
+
+            if (modalCrear) {
+                modalCrear.style.display = 'flex';
+            }
+
+        }
+
+        if (modalAbierto === 'editar') {
+
+            const modalEditar = document.getElementById('modalEditarProveedor');
+
+            if (modalEditar) {
+                modalEditar.style.display = 'flex';
+            }
+
+        }
+
+    });
+
+</script>
+
+{% endblock %}

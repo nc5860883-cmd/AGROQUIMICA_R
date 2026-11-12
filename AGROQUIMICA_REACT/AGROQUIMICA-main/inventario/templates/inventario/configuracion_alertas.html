@@ -1,0 +1,168 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}
+    Configuración de alertas - Agroquímica del Valle
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'inventario/styles/alertas.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/styles/parcial2.css' %}?v=2">
+{% endblock %}
+
+{% block contenido %}
+
+<div class="al-page cf-page">
+
+    <header class="al-header">
+        <h1 class="al-title">Configuración de alertas</h1>
+        <p class="av-subtitulo">Defina cuándo el sistema genera cada aviso automático.</p>
+    </header>
+
+    <form method="POST" class="cf-form">
+        {% csrf_token %}
+
+        {# ---------- Vencimiento ---------- #}
+        <section class="cf-regla cf-regla-venc">
+            <header class="cf-regla-head">
+                <span class="cf-chip cf-chip-venc">Vencimiento</span>
+                <h2 class="cf-regla-titulo">Lotes próximos a vencer</h2>
+                <ul class="cf-datos">
+                    <li><span>Avisa a:</span> usuarios que ven alertas</li>
+                    <li><span>Se revisa:</span> a diario y periódicamente</li>
+                </ul>
+            </header>
+            <div class="cf-campos">
+                {% for p in parametros %}
+                    {% if p.clave == 'dias_aviso_vencimiento' %}
+                        {% include 'inventario/_campo_config.html' with etiqueta='Avisar con anticipación de' ayuda='Días antes del vencimiento.' unidad='días' %}
+                    {% elif p.clave == 'minutos_revision_vencimientos' %}
+                        {% include 'inventario/_campo_config.html' with etiqueta='Revisar vencimientos cada' ayuda='Mientras el sistema está en uso.' unidad='minutos' %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <p class="cf-ejemplo">
+                Avisa cuando a un lote le quedan <span data-ej="dias_aviso_vencimiento"></span> días o menos.
+            </p>
+        </section>
+
+        {# ---------- Stock mínimo ---------- #}
+        <section class="cf-regla cf-regla-stock">
+            <header class="cf-regla-head">
+                <span class="cf-chip cf-chip-stock">Stock mínimo</span>
+                <h2 class="cf-regla-titulo">Stock bajo</h2>
+                <ul class="cf-datos">
+                    <li><span>Avisa a:</span> quien hizo el movimiento</li>
+                    <li><span>Se revisa:</span> al bajar el stock y a diario</li>
+                </ul>
+            </header>
+            <div class="cf-campos">
+                {% for p in parametros %}
+                    {% if p.clave == 'margen_stock_minimo' %}
+                        {% include 'inventario/_campo_config.html' with etiqueta='Margen sobre el stock mínimo' ayuda='Con 0 avisa recién al llegar al mínimo.' unidad='%' %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <p class="cf-ejemplo">
+                Con mínimo 10, avisa al llegar a <span data-ej="stock_ejemplo"></span> unidades o menos.
+            </p>
+        </section>
+
+        {# ---------- Egreso inusual ---------- #}
+        <section class="cf-regla cf-regla-egreso">
+            <header class="cf-regla-head">
+                <span class="cf-chip cf-chip-egreso">Egreso inusual</span>
+                <h2 class="cf-regla-titulo">Salidas fuera de lo normal</h2>
+                <ul class="cf-datos">
+                    <li><span>Avisa a:</span> Administrador</li>
+                    <li><span>Se revisa:</span> al registrar cada egreso</li>
+                </ul>
+            </header>
+            <div class="cf-campos">
+                {% for p in parametros %}
+                    {% if p.clave == 'egreso_inusual_desvios' %}
+                        {% include 'inventario/_campo_config.html' with etiqueta='Sensibilidad' ayuda='Menos desvíos = más avisos.' unidad='desvíos' %}
+                    {% elif p.clave == 'egreso_inusual_min_muestras' %}
+                        {% include 'inventario/_campo_config.html' with etiqueta='Historial mínimo' ayuda='Egresos previos necesarios para aplicar la regla.' unidad='egresos' %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <p class="cf-ejemplo">
+                Marca el egreso si supera el promedio en más de <span data-ej="egreso_inusual_desvios"></span> desvíos estándar.
+            </p>
+        </section>
+
+        {# ---------- Correo ---------- #}
+        <section class="cf-regla cf-regla-correo">
+            <header class="cf-regla-head">
+                <span class="cf-chip cf-chip-correo">Correo</span>
+                <h2 class="cf-regla-titulo">Envío por correo electrónico</h2>
+            </header>
+            <div class="cf-campos">
+                {% for p in parametros %}
+                    {% if p.clave == 'correo_alertas_activo' %}
+                        <div class="cf-campo{% if p.error %} cf-campo-error{% endif %}">
+                            <div class="cf-campo-texto">
+                                <label class="cf-label" for="cf-{{ p.clave }}">Enviar alertas por correo</label>
+                                <p class="cf-ayuda">Las alertas siempre se ven en el sistema.</p>
+                                {% if p.error %}<p class="cf-error">{{ p.error }}</p>{% endif %}
+                            </div>
+                            <div class="cf-control">
+                                <select id="cf-{{ p.clave }}" name="{{ p.clave }}"
+                                        class="form-select cf-input cf-select{% if p.error %} is-invalid{% endif %}" required>
+                                    <option value="1" {% if p.valor|stringformat:"s" == "1" %}selected{% endif %}>Sí</option>
+                                    <option value="0" {% if p.valor|stringformat:"s" == "0" %}selected{% endif %}>No</option>
+                                </select>
+                                <span class="cf-unidad"></span>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+        {# ---------- Acciones ---------- #}
+        {# Guardar va primero en el HTML: es el que se activa con Enter. #}
+        <div class="cf-acciones">
+            <button type="submit" class="al-btn al-btn-primary">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                Guardar configuración
+            </button>
+            <button type="submit" name="accion" value="revisar" class="al-btn al-btn-claro" formnovalidate
+                    title="Revisa ahora vencimientos y stock mínimo con la configuración guardada">
+                Evaluar reglas ahora
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<script>
+    // Actualiza los ejemplos mientras se editan los valores (solo visual).
+    (function () {
+        function valor(clave) {
+            var campo = document.querySelector('[name="' + clave + '"]');
+            return campo ? campo.value : '';
+        }
+        function actualizar() {
+            document.querySelectorAll('[data-ej]').forEach(function (el) {
+                var clave = el.getAttribute('data-ej');
+                if (clave === 'stock_ejemplo') {
+                    var margen = parseInt(valor('margen_stock_minimo'), 10) || 0;
+                    // Igual que el servidor (umbral_stock en alertas.py):
+                    // mínimo + margen redondeado hacia arriba.
+                    var minimo = 10;
+                    el.textContent = minimo + Math.ceil(minimo * margen / 100);
+                } else {
+                    el.textContent = valor(clave) || '…';
+                }
+            });
+        }
+        document.querySelectorAll('.cf-form input').forEach(function (i) {
+            i.addEventListener('input', actualizar);
+        });
+        actualizar();
+    })();
+</script>
+
+{% endblock %}

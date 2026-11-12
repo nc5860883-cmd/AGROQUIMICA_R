@@ -1,0 +1,582 @@
+/* ==========================================
+   PANEL PRINCIPAL · Agroquímica del Valle
+   El panel lo dibuja React con clases de Bootstrap 5.3
+   y gráficos de ApexCharts (react/panel_principal.jsx).
+
+   Este archivo:
+   1. Evita que Bootstrap cambie el menú y la barra superior.
+   2. Adapta Bootstrap a los colores de la agroquímica.
+   3. Define las animaciones de entrada.
+   4. Ajusta el modo oscuro.
+   Las clases propias empiezan con "pp-".
+   ========================================== */
+
+
+/* ==========================================
+   1. CONVIVENCIA CON EL RESTO DEL SISTEMA
+   ========================================== */
+
+/* Bootstrap sube el interlineado de toda la página: se deja como en
+   las demás pantallas para que el menú no cambie de alto. */
+body {
+    background-color: #f0f5f1;
+    color: #1c2a23;
+    font-family: 'Inter', sans-serif;
+    line-height: normal;
+}
+
+/* Bootstrap también usa la clase .nav-link: sin esto, el ítem del
+   menú lateral se pondría azul al hacerle clic. */
+.sidebar .nav-link,
+.sidebar .nav-link:focus,
+.sidebar .nav-link:hover {
+    color: #ffffff;
+}
+
+.sidebar .nav-link:focus-visible {
+    box-shadow: 0 0 0 2px rgba(245, 196, 0, .6);
+}
+
+.pp-cargando {
+    padding: 30px 0;
+    font-size: 13px;
+    color: #5c7367;
+}
+
+
+/* ==========================================
+   2. BOOTSTRAP CON LOS COLORES DE LA MARCA
+   Solo dentro del panel (.pp-panel).
+   ========================================== */
+
+.pp-panel {
+    line-height: 1.5;
+
+    --bs-body-font-family: 'Inter', sans-serif;
+    --bs-body-color: #1c2a23;
+    --bs-secondary-color: #6b7c73;
+    --bs-emphasis-color: #0b311e;
+    --bs-border-color: #e3eae6;
+    --bs-tertiary-bg: #f6f9f7;
+
+    /* Verde de la agroquímica en lugar del verde de Bootstrap */
+    --bs-success: #1b7a4a;
+    --bs-success-rgb: 27, 122, 74;
+    --bs-success-text-emphasis: #145236;
+    --bs-success-bg-subtle: #e6f4ec;
+    --bs-success-border-subtle: #bfe3cc;
+    --bs-link-color-rgb: 24, 90, 56;
+
+    --bs-card-border-color: #e3eae6;
+    --bs-card-border-radius: 12px;
+}
+
+.pp-panel .card {
+    --bs-card-cap-bg: transparent;
+    border-color: #e3eae6;
+    border-radius: 12px;
+}
+
+/* Botones verdes con el color de la marca */
+.pp-panel .btn-success {
+    --bs-btn-bg: #185a38;
+    --bs-btn-border-color: #185a38;
+    --bs-btn-hover-bg: #134a2e;
+    --bs-btn-hover-border-color: #134a2e;
+    --bs-btn-active-bg: #0f3a24;
+    --bs-btn-active-border-color: #0f3a24;
+}
+
+.pp-panel .btn-outline-success {
+    --bs-btn-color: #185a38;
+    --bs-btn-border-color: #cfe3d7;
+    --bs-btn-hover-bg: #eaf4ee;
+    --bs-btn-hover-color: #185a38;
+    --bs-btn-hover-border-color: #b9d7c5;
+    --bs-btn-active-bg: #185a38;
+    --bs-btn-active-border-color: #185a38;
+}
+
+.pp-panel .link-success { color: #185a38 !important; }
+.pp-panel .link-success:hover { text-decoration: underline !important; }
+
+
+/* ==========================================
+   3. ANIMACIONES
+   .pp-aparecer: entrada suave (sube y se desvanece).
+   --pp-i escalona la entrada de cada elemento.
+   Se desactivan si la persona pidió menos movimiento.
+   ========================================== */
+
+@keyframes pp-aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.pp-aparecer {
+    animation: pp-aparecer .55s cubic-bezier(.22, .61, .36, 1) both;
+    animation-delay: calc(var(--pp-i, 0) * 80ms);
+}
+
+/* Filas de la tabla: entran una tras otra */
+.pp-tabla tbody tr {
+    animation: pp-aparecer .4s ease both;
+    animation-delay: calc(var(--pp-i, 0) * 35ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pp-aparecer,
+    .pp-tabla tbody tr {
+        animation: none;
+    }
+
+    .pp-metrica-link {
+        transition: none;
+    }
+
+    .pp-metrica-link:hover {
+        transform: none;
+    }
+}
+
+
+/* ==========================================
+   TARJETAS DE MÉTRICAS
+   ========================================== */
+
+.pp-metrica {
+    color: inherit;
+    text-decoration: none;
+}
+
+.pp-metrica-link {
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+
+.pp-metrica-link:hover {
+    border-color: #b9d7c5;
+    box-shadow: 0 8px 22px rgba(15, 58, 36, .1);
+    transform: translateY(-3px);
+}
+
+.pp-metrica-icono {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    transition: transform .25s;
+}
+
+.pp-metrica-link:hover .pp-metrica-icono {
+    transform: scale(1.08) rotate(-4deg);
+}
+
+.pp-metrica-valor {
+    font-family: 'Poppins', sans-serif;
+    color: var(--bs-emphasis-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.pp-svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
+/* ==========================================
+   GRÁFICOS (ApexCharts)
+   ========================================== */
+
+.pp-grafico {
+    width: 100%;
+    min-height: 120px;
+}
+
+/* ApexCharts dibuja con la fuente del sistema */
+.pp-grafico .apexcharts-text,
+.pp-grafico .apexcharts-legend-text {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* El valor central del donut usa la tipografía de los títulos */
+.pp-grafico .apexcharts-datalabel-value {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Tooltip con las esquinas y la sombra del resto del panel */
+.pp-grafico .apexcharts-tooltip {
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(15, 58, 36, .15);
+}
+
+.pp-grafico .apexcharts-legend-series {
+    cursor: pointer;
+}
+
+/* Las barras de stock bajo llevan a Productos al hacer clic */
+.pp-grafico .apexcharts-bar-area {
+    cursor: pointer;
+}
+
+
+/* ==========================================
+   PESTAÑAS, LISTAS Y TABLA
+   ========================================== */
+
+/* Número dentro de las pestañas */
+.pp-contador {
+    background-color: rgba(255, 255, 255, .25);
+    color: inherit;
+}
+
+.btn-outline-success .pp-contador {
+    background-color: #e6f4ec;
+    color: #185a38;
+}
+
+.pp-lista {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.pp-tabla thead th {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
+}
+
+.pp-tabla td,
+.pp-tabla th {
+    padding: .7rem 1rem;
+}
+
+
+/* ==========================================
+   4. MODO OSCURO
+   tema.js pone data-bs-theme="dark" junto con .modo-oscuro.
+   Acá se reemplazan los grises de Bootstrap por los verdes oscuros
+   del sistema. Los colores de los gráficos se eligen en el .jsx
+   (coloresGrafico), con los mismos tonos de tema.css.
+   ========================================== */
+
+html.modo-oscuro .pp-panel {
+    --bs-body-bg: var(--d-surface);
+    --bs-body-color: var(--d-text);
+    --bs-secondary-color: var(--d-text-2);
+    --bs-emphasis-color: var(--d-title);
+    --bs-border-color: var(--d-border);
+    --bs-tertiary-bg: var(--d-surface-2);
+    --bs-secondary-bg: var(--d-surface-3);
+
+    --bs-success: #4ade80;
+    --bs-success-rgb: 74, 222, 128;
+    --bs-success-text-emphasis: var(--d-green-tx);
+    --bs-success-bg-subtle: var(--d-green-bg);
+    --bs-success-border-subtle: var(--d-green-bd);
+
+    --bs-card-border-color: var(--d-border);
+    --bs-list-group-bg: var(--d-surface);
+    --bs-list-group-border-color: var(--d-border);
+    --bs-list-group-action-hover-bg: var(--d-hover);
+}
+
+html.modo-oscuro .pp-cargando { color: var(--d-text-3); }
+
+html.modo-oscuro .pp-panel .list-group-item {
+    background-color: var(--d-surface);
+    border-color: var(--d-border);
+    color: var(--d-text);
+}
+
+html.modo-oscuro .pp-panel .list-group-item-action:hover {
+    background-color: var(--d-hover);
+}
+
+html.modo-oscuro .pp-panel .table {
+    --bs-table-bg: var(--d-surface);
+    --bs-table-color: var(--d-text);
+    --bs-table-border-color: var(--d-border);
+    --bs-table-hover-bg: var(--d-hover);
+    --bs-table-hover-color: var(--d-text);
+}
+
+html.modo-oscuro .pp-metrica-link:hover {
+    border-color: var(--d-green-bd) !important;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .35);
+}
+
+html.modo-oscuro .pp-grafico .apexcharts-tooltip {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+}
+
+/* tema.css pinta todos los .btn de gris en modo oscuro:
+   dentro del panel se recuperan los verdes. */
+html.modo-oscuro .pp-panel .btn-success {
+    background: var(--d-green-btn) !important;
+    border-color: var(--d-green-btn) !important;
+    color: #ffffff !important;
+}
+
+html.modo-oscuro .pp-panel .btn-success:hover {
+    background: var(--d-green-btn-h) !important;
+    border-color: var(--d-green-btn-h) !important;
+}
+
+html.modo-oscuro .pp-panel .btn-outline-success {
+    background: var(--d-surface-2) !important;
+    border-color: var(--d-border-2) !important;
+    color: var(--d-green-tx) !important;
+}
+
+html.modo-oscuro .pp-panel .btn-outline-success:hover {
+    background: var(--d-surface-3) !important;
+}
+
+html.modo-oscuro .pp-panel .link-success { color: var(--d-green) !important; }
+
+html.modo-oscuro .btn-outline-success .pp-contador {
+    background-color: var(--d-green-bg);
+    color: var(--d-green-tx);
+}
+
+html.modo-oscuro .pp-panel .alert-light {
+    background-color: var(--d-surface-2);
+    border-color: var(--d-border-2);
+    color: var(--d-text-2);
+}
+
+
+/* ==========================================
+   5. PORTADA (encabezado con la foto de los productos)
+   La foto va a la derecha y se funde con el fondo de la
+   página: mask-image la vuelve transparente hacia la izquierda
+   y hacia abajo, así el degradé funciona con cualquier color
+   de fondo (modo claro y modo oscuro).
+   ========================================== */
+
+.pp-hero {
+    position: relative;
+    isolation: isolate;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    margin-top: -6px;
+    padding: 28px 0;
+}
+
+/* --- Foto --- */
+.pp-hero-foto {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 68%;
+    overflow: hidden;
+    border-radius: 0 18px 18px 0;
+    opacity: 0;
+    transition: opacity .9s ease;
+
+    -webkit-mask-image:
+        linear-gradient(to right, transparent 0%, rgba(0, 0, 0, .35) 22%, #000 55%),
+        linear-gradient(to bottom, #000 62%, transparent 100%);
+    -webkit-mask-composite: source-in;
+            mask-image:
+        linear-gradient(to right, transparent 0%, rgba(0, 0, 0, .35) 22%, #000 55%),
+        linear-gradient(to bottom, #000 62%, transparent 100%);
+            mask-composite: intersect;
+}
+
+.pp-hero-foto.lista {
+    opacity: 1;
+}
+
+.pp-hero-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 45% 40%;
+    transform: scale(1.04);
+    animation: pp-hero-zoom 24s ease-in-out infinite alternate;
+}
+
+/* Velo verde muy suave encima de la foto, del color de la marca */
+.pp-hero-foto::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, rgba(24, 90, 56, .28), rgba(24, 90, 56, 0) 55%, rgba(245, 196, 0, .08));
+    mix-blend-mode: multiply;
+}
+
+/* --- Brillos de fondo --- */
+.pp-hero-brillo {
+    position: absolute;
+    z-index: -2;
+    border-radius: 50%;
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.pp-hero-brillo-1 {
+    width: 320px;
+    height: 320px;
+    left: -80px;
+    top: -120px;
+    background: radial-gradient(circle, rgba(46, 157, 102, .22), transparent 70%);
+    animation: pp-hero-flotar 14s ease-in-out infinite alternate;
+}
+
+.pp-hero-brillo-2 {
+    width: 260px;
+    height: 260px;
+    left: 26%;
+    bottom: -140px;
+    background: radial-gradient(circle, rgba(245, 196, 0, .16), transparent 70%);
+    animation: pp-hero-flotar 18s ease-in-out infinite alternate-reverse;
+}
+
+/* --- Texto --- */
+.pp-hero-texto {
+    position: relative;
+    max-width: 520px;
+}
+
+.pp-hero-titulo {
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(26px, 3vw, 38px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    margin-bottom: 8px;
+    color: var(--bs-emphasis-color);
+}
+
+.pp-hero-titulo span {
+    background: linear-gradient(90deg, #185a38, #2e9d66 55%, #c9a200);
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+}
+
+.pp-hero-sub {
+    margin-bottom: 18px;
+    font-size: 14px;
+    color: var(--bs-secondary-color);
+}
+
+.pp-hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: transform .2s, box-shadow .2s;
+}
+
+.pp-hero-btn .pp-svg {
+    width: 16px;
+    height: 16px;
+}
+
+.pp-hero-btn.btn-success {
+    box-shadow: 0 8px 18px -8px rgba(24, 90, 56, .7);
+}
+
+.pp-hero-btn:hover {
+    transform: translateY(-2px);
+}
+
+.pp-hero-btn.btn-outline-success {
+    background: rgba(255, 255, 255, .75);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+/* --- Animaciones de la portada --- */
+@keyframes pp-hero-zoom {
+    from { transform: scale(1.04); }
+    to   { transform: scale(1.12) translateX(-1.5%); }
+}
+
+@keyframes pp-hero-flotar {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(40px, 24px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pp-hero-foto img,
+    .pp-hero-brillo {
+        animation: none;
+    }
+
+    .pp-hero-foto {
+        transition: none;
+    }
+}
+
+/* --- Celulares y tablets: la foto arriba, el texto abajo --- */
+@media (max-width: 767.98px) {
+    .pp-hero {
+        flex-direction: column;
+        align-items: stretch;
+        min-height: 0;
+        padding: 0 0 8px;
+    }
+
+    .pp-hero-foto {
+        position: relative;
+        width: auto;
+        height: 190px;
+        margin: 0 -4px -56px;
+        border-radius: 16px;
+        -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+                mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+    }
+
+    .pp-hero-foto img {
+        object-position: 40% 45%;
+    }
+
+    .pp-hero-texto {
+        max-width: none;
+    }
+}
+
+/* --- Modo oscuro --- */
+html.modo-oscuro .pp-hero-foto img {
+    filter: brightness(.78) saturate(.95);
+}
+
+html.modo-oscuro .pp-hero-foto::after {
+    background: linear-gradient(110deg, rgba(10, 30, 20, .45), rgba(10, 30, 20, 0) 60%);
+}
+
+html.modo-oscuro .pp-hero-titulo span {
+    background: linear-gradient(90deg, #4ade80, #a3e635 55%, #f5c400);
+    -webkit-background-clip: text;
+            background-clip: text;
+}
+
+html.modo-oscuro .pp-hero-brillo-1 {
+    background: radial-gradient(circle, rgba(74, 222, 128, .14), transparent 70%);
+}
+
+html.modo-oscuro .pp-panel .pp-hero-btn.btn-outline-success {
+    background: rgba(21, 31, 26, .75) !important;
+}
