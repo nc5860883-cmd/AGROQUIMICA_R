@@ -1,0 +1,14 @@
+﻿/* ESTILOS GENERALES DEL SISTEMA */
+
+@import './originales/sidebar.css';
+@import './originales/topbar.css';
+
+@import './originales/confirmar.css';
+@import './originales/cerrar_sesion.css';
+@import './originales/bootstrap_ajustes.css';
+@import './originales/ojo_clave.css';
+
+@import './originales/pantallas.css';
+
+@import './originales/tema.css';
+@import './originales/botones.css';

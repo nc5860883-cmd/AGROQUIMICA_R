@@ -18,7 +18,7 @@
 
 /* Bootstrap sube el interlineado de toda la página: se deja como en
    las demás pantallas para que el menú no cambie de alto. */
-body {
+body:has(.pp-panel) {
     background-color: #f0f5f1;
     color: #1c2a23;
     font-family: 'Inter', sans-serif;

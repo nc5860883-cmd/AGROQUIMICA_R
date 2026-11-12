@@ -1,0 +1,812 @@
+/* ============================================================
+   TOPBAR · Agroquímica del Valle
+   Izquierda: botón del menú + ubicación actual.
+   Derecha: fecha, alertas y modo oscuro.
+   Animaciones suaves; se desactivan si el sistema operativo
+   pide reducir el movimiento.
+   ============================================================ */
+
+.topbar {
+    --tb-alto: 64px;
+    --tb-fondo: rgba(255, 255, 255, .82);
+    --tb-borde: #e3eae6;
+    --tb-texto: #1b3a2b;
+    --tb-suave: #7b8e82;
+    --tb-icono: #4a6358;
+    --tb-hover: #eef4f0;
+    --tb-verde: #185a38;
+    --tb-acento: #2e9d66;
+
+    position: sticky;
+    top: 0;
+    z-index: 1500;
+
+    height: var(--tb-alto);
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    padding: 0 28px;
+
+    /* Vidrio esmerilado: el contenido se ve borroso al pasar por debajo */
+    background-color: var(--tb-fondo);
+    backdrop-filter: saturate(170%) blur(12px);
+    -webkit-backdrop-filter: saturate(170%) blur(12px);
+
+    border-bottom: 1px solid var(--tb-borde);
+
+    font-family: 'Inter', sans-serif;
+
+    transition: box-shadow .25s ease, background-color .25s ease, height .25s ease;
+    animation: tb-entrada .45s ease-out both;
+}
+
+/* Al bajar en la página: sombra y barra un poco más baja */
+.topbar.topbar-con-scroll {
+    --tb-alto: 58px;
+    box-shadow: 0 6px 20px rgba(15, 58, 36, .08);
+}
+
+/* Línea de acento bajo la barra: se dibuja de izquierda a derecha al cargar */
+.topbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--tb-verde), var(--tb-acento) 55%, #f5c400);
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: tb-linea .9s .15s cubic-bezier(.2, .8, .2, 1) forwards;
+    opacity: .9;
+}
+
+
+/* ============================================================
+   LADOS
+   ============================================================ */
+
+.topbar-left,
+.topbar-right {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.topbar-left  { gap: 14px; }
+.topbar-right { gap: 8px; flex-shrink: 0; }
+
+
+/* ============================================================
+   BOTONES DE ÍCONO (menú, alertas, tema)
+   ============================================================ */
+
+.topbar-icon-btn {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--tb-icono);
+    text-decoration: none;
+    cursor: pointer;
+
+    transition:
+        background-color .2s ease,
+        border-color .2s ease,
+        color .2s ease,
+        transform .2s ease;
+}
+
+.topbar-icon-btn:hover {
+    background-color: var(--tb-hover);
+    border-color: var(--tb-borde);
+    color: var(--tb-verde);
+    transform: translateY(-1px);
+}
+
+.topbar-icon-btn:active { transform: scale(.94); }
+
+.topbar-icon-btn:focus-visible {
+    outline: 2px solid var(--tb-acento);
+    outline-offset: 2px;
+}
+
+.topbar-icon-btn svg { transition: transform .3s ease; }
+
+
+/* Botón del menú: las líneas se acomodan al abrir o cerrar el menú */
+.topbar-menu-btn {
+    border-color: var(--tb-borde);
+    background-color: #ffffff;
+}
+
+.tb-linea {
+    transform-box: fill-box;
+    transform-origin: left center;
+    transition: transform .3s ease, opacity .3s ease;
+}
+
+.topbar-menu-btn:hover .tb-linea-2 { transform: scaleX(1.6); }
+
+/* Menú oculto: las líneas forman una flecha que apunta a la derecha */
+.topbar-menu-btn.menu-cerrado .tb-linea-1 { transform: translateX(4px) scaleX(.6); }
+.topbar-menu-btn.menu-cerrado .tb-linea-2 { transform: scaleX(1.6); }
+.topbar-menu-btn.menu-cerrado .tb-linea-3 { transform: translateX(4px) scaleX(.6); }
+
+
+/* Botón de tema: el sol o la luna giran al pasar el mouse */
+.topbar-tema:hover svg { transform: rotate(25deg) scale(1.08); }
+
+
+/* Campana: se balancea al pasar el mouse */
+.topbar-alertas:hover svg {
+    animation: tb-campana .6s ease;
+}
+
+/* Número de alertas sin atender, con un pulso suave */
+.topbar-badge {
+    position: absolute;
+    top: 2px;
+    right: 1px;
+
+    min-width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    padding: 0 5px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #dc2626;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff;
+
+    animation: tb-aparecer .35s .4s ease-out both;
+}
+
+.topbar-badge::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 2px solid #dc2626;
+    animation: tb-pulso 2.2s 1s ease-out infinite;
+}
+
+
+/* ============================================================
+   UBICACIÓN ACTUAL
+   ============================================================ */
+
+.topbar-crumbs {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+}
+
+.topbar-crumb {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    color: var(--tb-suave);
+    white-space: nowrap;
+
+    /* Entran uno detrás del otro */
+    animation: tb-tramo .4s ease-out both;
+}
+
+.topbar-crumb:nth-child(2) { animation-delay: .08s; }
+.topbar-crumb:nth-child(3) { animation-delay: .16s; }
+.topbar-crumb:nth-child(4) { animation-delay: .24s; }
+
+/* Separador: flecha fina dibujada con bordes */
+.topbar-crumb + .topbar-crumb::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    margin: 0 12px 0 8px;
+    border-top: 1.6px solid #b4c3ba;
+    border-right: 1.6px solid #b4c3ba;
+    transform: rotate(45deg);
+}
+
+.topbar-crumb a {
+    color: inherit;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: color .2s ease, background-color .2s ease;
+}
+
+.topbar-crumb a:hover { color: var(--tb-verde); }
+
+/* Ícono de inicio */
+.topbar-crumb-inicio a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+}
+
+.topbar-crumb-inicio a:hover { background-color: var(--tb-hover); }
+
+/* Pantalla actual: en negrita, con una línea que se dibuja debajo */
+.topbar-crumb-actual {
+    position: relative;
+    overflow: hidden;
+    padding: 4px 0;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: var(--tb-texto);
+    text-overflow: ellipsis;
+}
+
+.topbar-crumb-actual::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background-color: var(--tb-acento);
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: tb-linea .5s .35s ease-out forwards;
+}
+
+
+/* ============================================================
+   FECHA Y SEPARADOR
+   ============================================================ */
+
+.topbar-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    background-color: #f4f8f5;
+    border: 1px solid var(--tb-borde);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4a6358;
+    white-space: nowrap;
+    transition: border-color .2s ease, background-color .2s ease;
+}
+
+.topbar-date svg { color: var(--tb-acento); }
+
+/* Ícono de calendario con un pulso suave (el que tenía el puntito
+   de la fecha en el panel principal) */
+.topbar-date-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: -5px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(46, 157, 102, .55);
+    animation: tb-fecha-pulso 2.2s infinite;
+}
+
+@keyframes tb-fecha-pulso {
+    0%   { box-shadow: 0 0 0 0 rgba(46, 157, 102, .55); }
+    70%  { box-shadow: 0 0 0 7px rgba(46, 157, 102, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 157, 102, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .topbar-date-ico { animation: none; }
+}
+
+.topbar-date:hover {
+    border-color: #cfe3d7;
+    background-color: #eef6f1;
+}
+
+.topbar-sep {
+    width: 1px;
+    height: 24px;
+    margin: 0 4px;
+    background-color: var(--tb-borde);
+}
+
+
+/* ============================================================
+   ANIMACIONES
+   ============================================================ */
+
+@keyframes tb-entrada {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tb-linea {
+    to { transform: scaleX(1); }
+}
+
+@keyframes tb-tramo {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tb-aparecer {
+    from { opacity: 0; transform: scale(.4); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes tb-pulso {
+    0%   { opacity: .7; transform: scale(1); }
+    70%  { opacity: 0;  transform: scale(1.7); }
+    100% { opacity: 0;  transform: scale(1.7); }
+}
+
+@keyframes tb-campana {
+    0%, 100% { transform: rotate(0); }
+    20% { transform: rotate(14deg); }
+    40% { transform: rotate(-12deg); }
+    60% { transform: rotate(8deg); }
+    80% { transform: rotate(-4deg); }
+}
+
+/* Quien tiene activado "reducir movimiento" ve todo sin animar */
+@media (prefers-reduced-motion: reduce) {
+    .topbar,
+    .topbar *,
+    .topbar::after,
+    .topbar *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+
+/* ============================================================
+   MODO OSCURO
+   ============================================================ */
+
+html.modo-oscuro .topbar {
+    --tb-fondo: rgba(17, 26, 21, .86);
+    --tb-borde: var(--d-border);
+    --tb-texto: var(--d-title);
+    --tb-suave: var(--d-text-3);
+    --tb-icono: var(--d-text-2);
+    --tb-hover: var(--d-surface-3);
+    --tb-verde: var(--d-green);
+    --tb-acento: #2e9d66;
+
+    background-color: var(--tb-fondo) !important;
+}
+
+html.modo-oscuro .topbar.topbar-con-scroll {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+}
+
+html.modo-oscuro .topbar-menu-btn {
+    background-color: var(--d-surface-2);
+    color: #8fd0a8;
+}
+
+html.modo-oscuro .topbar-crumb + .topbar-crumb::before {
+    border-color: var(--d-border-2);
+}
+
+html.modo-oscuro .topbar-date {
+    background-color: var(--d-surface-2);
+    color: var(--d-text-2);
+}
+
+html.modo-oscuro .topbar-date svg { color: var(--d-green); }
+
+html.modo-oscuro .topbar-date-ico { animation-name: tb-fecha-pulso-oscuro; }
+
+@keyframes tb-fecha-pulso-oscuro {
+    0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, .45); }
+    70%  { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+
+html.modo-oscuro .topbar-date:hover {
+    background-color: var(--d-surface-3);
+    border-color: var(--d-green-bd);
+}
+
+html.modo-oscuro .topbar-badge { border-color: #111a15; }
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1000px) {
+    .topbar-date,
+    .topbar-sep { display: none; }
+}
+
+@media (max-width: 700px) {
+    .topbar { padding: 0 16px; }
+
+    /* En pantallas chicas queda solo el nombre de la pantalla */
+    .topbar-crumb:not(.topbar-crumb-inicio):not(.topbar-crumb-actual) { display: none; }
+}
+
+@media (max-width: 450px) {
+    .topbar { --tb-alto: 56px; gap: 8px; }
+    .topbar-left { gap: 8px; }
+    .topbar-crumb-inicio { display: none; }
+    .topbar-crumb-actual::before { display: none; }
+}
+
+
+/* ============================================================
+   BANDEJA DE NOTIFICACIONES
+   Reemplaza a la campana: ícono de mensajes con el número de
+   alertas sin atender y una bandeja que se abre debajo.
+   ============================================================ */
+
+.topbar-notif { position: relative; }
+
+/* El número se oculta cuando no hay alertas */
+.topbar-badge[hidden] { display: none; }
+
+/* La bandeja cerrada no ocupa lugar ni tapa lo que hay debajo.
+   (Sin esto, display: flex le ganaba a hidden y el recuadro invisible
+   bloqueaba los botones de la derecha de cada pantalla.) */
+.tb-notif-panel[hidden] { display: none; }
+
+/* El sobre se mueve apenas al pasar el mouse */
+.topbar-alertas:hover svg { animation: tb-sobre .5s ease; }
+
+@keyframes tb-sobre {
+    0%, 100% { transform: translateY(0); }
+    40%      { transform: translateY(-3px); }
+    70%      { transform: translateY(1px); }
+}
+
+.tb-notif-panel {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: -8px;
+    z-index: 1600;
+
+    width: 380px;
+    max-width: calc(100vw - 24px);
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    background: #ffffff;
+    border: 1px solid var(--tb-borde);
+    border-radius: 16px;
+    box-shadow: 0 18px 48px rgba(15, 58, 36, .18);
+
+    opacity: 0;
+    transform: translateY(-8px) scale(.98);
+    transform-origin: top right;
+    transition: opacity .18s ease, transform .18s ease;
+
+    /* Mientras se cierra con la animación, tampoco recibe clics. */
+    pointer-events: none;
+}
+
+.tb-notif-panel.abierto {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+/* Flechita que apunta al ícono */
+.tb-notif-panel::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    right: 22px;
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-top: 1px solid var(--tb-borde);
+    border-left: 1px solid var(--tb-borde);
+    transform: rotate(45deg);
+}
+
+.tb-notif-cab {
+    position: relative;
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--tb-borde);
+}
+
+.tb-notif-cab strong {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--tb-texto);
+}
+
+.tb-notif-cab span {
+    font-size: 12px;
+    color: var(--tb-suave);
+}
+
+.tb-notif-lista {
+    max-height: 380px;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.tb-notif-vacio {
+    padding: 28px 16px;
+    font-size: 13px;
+    text-align: center;
+    color: var(--tb-suave);
+}
+
+/* Cada alerta */
+.tb-notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    transition: background-color .15s ease, opacity .25s ease, transform .25s ease;
+    animation: tb-tramo .3s ease-out both;
+}
+
+.tb-notif-item:hover { background: #f4f8f5; }
+
+/* Al atenderla, se desliza hacia la derecha y desaparece */
+.tb-notif-item.tb-notif-saliendo {
+    opacity: 0;
+    transform: translateX(24px);
+}
+
+.tb-notif-icono {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+}
+
+.tb-notif-icono svg,
+.tb-notif-atender svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Stock mínimo: rojo · Por vencer: ámbar · Vencido: rojo */
+.tb-notif-stock .tb-notif-icono       { background: #fdecec; color: #b91c1c; }
+.tb-notif-vencimiento .tb-notif-icono { background: #fff4d6; color: #b45309; }
+.tb-notif-vencido .tb-notif-icono     { background: #fdecec; color: #b91c1c; }
+
+.tb-notif-cuerpo { flex: 1; min-width: 0; }
+
+.tb-notif-linea {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.tb-notif-etiqueta {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+
+.tb-notif-stock .tb-notif-etiqueta,
+.tb-notif-vencido .tb-notif-etiqueta { color: #b91c1c; }
+.tb-notif-vencimiento .tb-notif-etiqueta { color: #b45309; }
+
+.tb-notif-hace {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--tb-suave);
+}
+
+.tb-notif-producto {
+    display: block;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tb-texto);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tb-notif-mensaje {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #5c7367;
+}
+
+/* Botón para marcarla como atendida */
+.tb-notif-atender {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #cfe3d7;
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--tb-verde);
+    cursor: pointer;
+    opacity: .7;
+    transition: opacity .15s ease, background-color .15s ease, transform .15s ease;
+}
+
+.tb-notif-item:hover .tb-notif-atender { opacity: 1; }
+
+.tb-notif-atender:hover {
+    background: #e6f4ec;
+    transform: scale(1.06);
+}
+
+.tb-notif-atender:disabled { cursor: wait; opacity: .4; }
+
+.tb-notif-atender:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--tb-acento);
+    outline-offset: 2px;
+}
+
+/* Pie: enlace al historial */
+.tb-notif-pie {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px;
+    border-top: 1px solid var(--tb-borde);
+    background: #fafcfb;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--tb-verde);
+    text-decoration: none;
+    transition: background-color .15s ease;
+}
+
+.tb-notif-pie:hover { background: #eef6f1; }
+
+
+/* ---------- Bandeja en modo oscuro ---------- */
+
+html.modo-oscuro .tb-notif-panel,
+html.modo-oscuro .tb-notif-panel::before {
+    background: var(--d-surface);
+    border-color: var(--d-border);
+}
+
+html.modo-oscuro .tb-notif-panel { box-shadow: 0 18px 48px rgba(0, 0, 0, .45); }
+html.modo-oscuro .tb-notif-item:hover { background: var(--d-hover); }
+html.modo-oscuro .tb-notif-mensaje { color: var(--d-text-2); }
+
+html.modo-oscuro .tb-notif-stock .tb-notif-icono,
+html.modo-oscuro .tb-notif-vencido .tb-notif-icono { background: var(--d-red-bg); color: var(--d-red-tx); }
+html.modo-oscuro .tb-notif-vencimiento .tb-notif-icono { background: var(--d-amb-bg); color: var(--d-amb-tx); }
+
+html.modo-oscuro .tb-notif-stock .tb-notif-etiqueta,
+html.modo-oscuro .tb-notif-vencido .tb-notif-etiqueta { color: var(--d-red-tx); }
+html.modo-oscuro .tb-notif-vencimiento .tb-notif-etiqueta { color: var(--d-amb-tx); }
+
+html.modo-oscuro .tb-notif-atender {
+    background: var(--d-surface-2);
+    border-color: var(--d-green-bd);
+    color: var(--d-green-tx);
+}
+
+html.modo-oscuro .tb-notif-atender:hover { background: var(--d-green-bg); }
+
+html.modo-oscuro .tb-notif-pie {
+    background: var(--d-surface-2);
+    border-color: var(--d-border);
+    color: var(--d-green);
+}
+
+html.modo-oscuro .tb-notif-pie:hover { background: var(--d-surface-3); }
+
+
+/* ---------- Bandeja en celulares: ocupa el ancho de la pantalla ---------- */
+
+@media (max-width: 500px) {
+    .topbar-notif { position: static; }
+
+    .tb-notif-panel {
+        position: fixed;
+        top: 64px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-width: none;
+    }
+
+    .tb-notif-panel::before { display: none; }
+}
+
+/* ==========================================
+   NOTIFICACIONES (tabla NOTIFICACION)
+   ========================================== */
+
+/* Encabezado con el botón "Marcar todas como leídas" */
+.tb-notif-cab {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.tb-notif-todas {
+    flex-shrink: 0;
+    margin-top: 2px;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--tb-verde);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tb-notif-todas:hover { background: #e6f4ec; }
+
+/* Egreso inusual: violeta */
+.tb-notif-inusual .tb-notif-icono     { background: #efe9fe; color: #6d28d9; }
+.tb-notif-inusual .tb-notif-etiqueta  { color: #6d28d9; }
+
+/* No leída: fondo suave y punto a la izquierda del texto */
+.tb-notif-item.tb-notif-noleida { background: #f2f8f4; }
+.tb-notif-item.tb-notif-noleida .tb-notif-mensaje { color: var(--tb-texto); font-weight: 500; }
+
+/* Leída: más apagada */
+.tb-notif-item.tb-notif-leida { opacity: .62; }
+.tb-notif-item.tb-notif-leida:hover { opacity: 1; }
+
+html.modo-oscuro .tb-notif-todas { color: #6ee7a1; }
+html.modo-oscuro .tb-notif-todas:hover { background: #1f3328; }
+html.modo-oscuro .tb-notif-item.tb-notif-noleida { background: #1a2a22; }
+html.modo-oscuro .tb-notif-inusual .tb-notif-icono { background: #2a1a4a; color: #a78bfa; }
+html.modo-oscuro .tb-notif-inusual .tb-notif-etiqueta { color: #a78bfa; }

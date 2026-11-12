@@ -1,0 +1,22 @@
+/* ==========================================
+   ESTILOS GENERALES DEL SISTEMA
+   Agroquímica del Valle
+   Se carga únicamente dentro del panel React.
+   ========================================== */
+
+/* Estructura general */
+@import './originales/sidebar.css';
+@import './originales/topbar.css';
+
+/* Elementos comunes */
+@import './originales/confirmar.css';
+@import './originales/cerrar_sesion.css';
+@import './originales/bootstrap_ajustes.css';
+@import './originales/ojo_clave.css';
+
+/* Estilos compartidos de las pantallas */
+@import './originales/pantallas.css';
+
+/* Tema y botones: deben quedar al final */
+@import './originales/tema.css';
+@import './originales/botones.css';
