@@ -49,7 +49,9 @@ def paginar(request, consulta, por_defecto=10):
         paginador.get_elided_page_range(pagina.number, on_each_side=1, on_ends=1)
     )
     pagina.elipsis = paginador.ELLIPSIS
+    
     pagina.por_pagina = por_pagina
+
     pagina.opciones = OPCIONES_POR_PAGINA
 
     return pagina

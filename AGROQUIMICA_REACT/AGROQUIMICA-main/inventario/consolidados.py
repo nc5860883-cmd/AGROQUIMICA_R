@@ -36,7 +36,9 @@ from django.utils import timezone
 from .models import Lotes, MovimientosStock, Productos, Remitos
 
 TIPOS_VENTA = ('Egreso por venta', 'Salida por venta')
+
 TIPO_BAJA = 'Salida por vencimiento de producto'
+
 
 
 # ------------------------------------------------------------
