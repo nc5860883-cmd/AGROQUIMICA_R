@@ -10,6 +10,7 @@ export function fecha(valor, conHora = false) {
     : d.toLocaleDateString('es-AR')
 }
 
+// Formatea un número con separador de miles argentino (1.234)
 export function numero(valor) {
   return Number(valor || 0).toLocaleString('es-AR')
 }

@@ -1,3 +1,8 @@
+// ============================================================
+// HOOK: VISTA PREVIA DE IMÁGENES
+// Se usa en los formularios con foto (productos, perfil de usuario).
+// ============================================================
+
 import { useEffect, useMemo } from 'react'
 
 /*

@@ -1,3 +1,8 @@
+// ============================================================
+// PÁGINA 404
+// Se muestra cuando la dirección no coincide con ninguna ruta de App.jsx.
+// ============================================================
+
 import { Link } from 'react-router-dom'
 
 function NotFound() {

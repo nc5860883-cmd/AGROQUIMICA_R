@@ -1,3 +1,9 @@
+// ============================================================
+// MOVIMIENTOS DE STOCK
+// Historial de entradas, egresos y anulaciones de cada lote.
+// Permite descargar el comprobante y anular un egreso.
+// ============================================================
+
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -20,9 +26,11 @@ function colorTipo(nombre = '') {
   return 'danger'
 }
 
+// Ventana para anular un egreso (pide el motivo)
 function FormAnular({ movimiento, onCerrar, onGuardar }) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm()
 
+  // Al abrir la ventana, se limpia el formulario
   useEffect(() => {
     if (movimiento) reset({ Motivo_anulacion: '' })
   }, [movimiento, reset])
@@ -51,18 +59,22 @@ function FormAnular({ movimiento, onCerrar, onGuardar }) {
   )
 }
 
+// Pantalla principal de movimientos
 function Movimientos() {
   const { perm, ejecutar } = useOutletContext()
+  // Filtros (búsqueda, tipo, página), texto del buscador y movimiento a anular
   const [filtros, setFiltros] = useState({ q: '', tipo: '', page: 1, por_pagina: '' })
   const [texto, setTexto] = useState('')
   const { datos, cargando, error, recargar } = usePantalla('movimientos-stock/', filtros)
   const [anular, setAnular] = useState(null)
 
+  // Espera a que el usuario deje de escribir para buscar (evita un pedido por tecla)
   useEffect(() => {
     const t = setTimeout(() => setFiltros((f) => (f.q === texto.trim() ? f : { ...f, q: texto.trim(), page: 1 })), 400)
     return () => clearTimeout(t)
   }, [texto])
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const movimientos = datos.pagina?.items || []
@@ -71,8 +83,10 @@ function Movimientos() {
     <div>
       <Encabezado icono="cambio" titulo="Movimientos de stock" subtitulo="Entradas, egresos y anulaciones de stock de cada lote." />
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Filtros: buscador y tipo de movimiento */}
       <BarraFiltros total={`${datos.pagina?.total || 0} movimiento(s)`}>
         <Buscador valor={texto} onCambiar={setTexto} placeholder="Buscar por producto, lote u observación..." />
         <Filtro etiqueta="Tipo de movimiento">
@@ -86,6 +100,7 @@ function Movimientos() {
         </Filtro>
       </BarraFiltros>
 
+      {/* Tabla de movimientos */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -146,6 +161,7 @@ function Movimientos() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={datos.pagina}
             onPagina={(n) => setFiltros((f) => ({ ...f, page: n }))}
             onPorPagina={(n) => setFiltros((f) => ({ ...f, por_pagina: n, page: 1 }))} />

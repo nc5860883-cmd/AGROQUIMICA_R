@@ -1,4 +1,9 @@
-// Piezas pequeñas que se repiten en todas las pantallas.
+// ============================================================
+// COMPONENTES COMUNES
+// Íconos, encabezado de pantalla, filtros, buscador, etiquetas de estado,
+// celdas de tabla, carga/errores y errores de formulario.
+// Son piezas pequeñas que se repiten en todas las pantallas.
+// ============================================================
 
 // Íconos de línea (mismo estilo que el menú lateral).
 const TRAZOS = {
@@ -36,6 +41,7 @@ const TRAZOS = {
   venta: ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
 }
 
+// Dibuja un ícono por su nombre. Ej.: <Icono nombre="editar" />
 export function Icono({ nombre, className = 'av-ico' }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">

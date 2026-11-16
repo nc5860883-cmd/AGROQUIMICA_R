@@ -1,3 +1,7 @@
+// ============================================================
+// ÍCONOS DEL MENÚ LATERAL (SVG)
+// ============================================================
+
 // Íconos SVG del menú (los mismos de _sidebar.html).
 // Se dibujan una vez y cada ícono se usa con <use href="#i-...">.
 function Iconos() {

@@ -1,3 +1,9 @@
+// ============================================================
+// MENSAJES EMERGENTES (TOASTS)
+// Avisos que aparecen en la esquina (éxito, aviso, error) y se
+// cierran solos. La lista la maneja el Layout.
+// ============================================================
+
 import { useEffect } from 'react'
 import '../estilos/Mensajes.css'
 

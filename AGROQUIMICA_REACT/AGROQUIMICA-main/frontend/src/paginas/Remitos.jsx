@@ -1,3 +1,9 @@
+// ============================================================
+// REMITOS
+// Ingreso de mercadería: cada remito de un proveedor trae uno o más lotes.
+// Permite registrar, editar, corregir lotes, anular y descargar el PDF.
+// ============================================================
+
 import { Fragment, useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
@@ -12,7 +18,9 @@ import { fecha } from '../servicios/formato'
 import { urlArchivo } from '../servicios/api'
 import { reglaEntero, reglaTexto } from '../servicios/validaciones'
 
+// Fila vacía para un lote nuevo dentro del remito
 const LOTE_VACIO = { producto: '', numero: '', vencimiento: '', cajas: '', unidades: '' }
+// Regla de validación para códigos (número de remito, número de lote)
 const reglaCodigo = (etiqueta) => ({
   required: `${etiqueta} es obligatorio.`,
   maxLength: { value: 50, message: `${etiqueta} no puede superar los 50 caracteres.` },
@@ -28,10 +36,12 @@ function FormRemito({ abierto, datos, onCerrar, onGuardar }) {
   // useFieldArray: lista dinámica de lotes (agregar / quitar filas).
   const { fields, append, remove } = useFieldArray({ control, name: 'lotes' })
 
+  // Al abrir la ventana se limpia el formulario y queda una fila de lote
   useEffect(() => {
     if (abierto) reset({ ID_Proveedor: '', Numero_remito: '', Fecha_remito: datos.hoy, lotes: [LOTE_VACIO] })
   }, [abierto, datos.hoy, reset])
 
+  // Valores que se observan en tiempo real mientras se completa el formulario
   const [proveedorId, numeroRemito, lotes] = useWatch({ control, name: ['ID_Proveedor', 'Numero_remito', 'lotes'] })
 
   // Solo se pueden ingresar productos que suministra el proveedor elegido.
@@ -39,12 +49,15 @@ function FormRemito({ abierto, datos, onCerrar, onGuardar }) {
     (p) => (p.proveedores || []).some((x) => String(x.ID_Proveedor) === String(proveedorId)),
   )
   const proveedor = (datos.proveedores_alta || []).find((p) => String(p.ID_Proveedor) === String(proveedorId))
+  // Avisa si ese número de remito ya existe para el proveedor
   const repetido = (datos.numeros_remito || []).find(
     (r) => numeroRemito && r.numero.toLowerCase() === numeroRemito.trim().toLowerCase()
       && r.proveedor === proveedor?.nombre_proveedor,
   )
+  // Total de unidades que ingresan (cajas x unidades por caja de cada lote)
   const totalUnidades = (lotes || []).reduce((t, l) => t + (Number(l.cajas) || 0) * (Number(l.unidades) || 0), 0)
 
+  // Envía el remito: los lotes van como listas paralelas, como espera Django
   const enviar = (v) => onGuardar({
     accion: 'crear_remito',
     ID_Proveedor: v.ID_Proveedor,
@@ -108,6 +121,7 @@ function FormRemito({ abierto, datos, onCerrar, onGuardar }) {
         )}
 
         <div className="table-responsive">
+          {/* Tabla de lotes del remito (se pueden agregar y quitar filas) */}
           <table className="table align-middle">
             <thead>
               <tr>
@@ -215,6 +229,7 @@ function FormSimple({ pedido, onCerrar, onGuardar }) {
 
 /* ------------------------- PANTALLA ------------------------- */
 function Remitos() {
+  // Permisos, filtros, datos de Django, remitos desplegados y ventanas abiertas
   const { perm, ejecutar } = useOutletContext()
   const [filtros, setFiltros] = useState({ q: '', proveedor: '', estado: '', desde: '', hasta: '', page: 1, por_pagina: '' })
   const [texto, setTexto] = useState('')
@@ -223,13 +238,16 @@ function Remitos() {
   const [crear, setCrear] = useState(false)
   const [simple, setSimple] = useState(null)
 
+  // Espera a que el usuario deje de escribir para buscar (evita un pedido por tecla)
   useEffect(() => {
     const t = setTimeout(() => setFiltros((f) => (f.q === texto.trim() ? f : { ...f, q: texto.trim(), page: 1 })), 400)
     return () => clearTimeout(t)
   }, [texto])
 
+  // Cambia un filtro y vuelve a la página 1
   const filtrar = (campo, valor) => setFiltros((f) => ({ ...f, [campo]: valor, page: 1 }))
 
+  // Ejecuta una acción en Django; si sale bien, cierra la ventana y recarga la lista
   const accion = async (valores, alTerminar) => {
     const r = await ejecutar('remitos/', valores)
     if (r.ok) {
@@ -239,11 +257,13 @@ function Remitos() {
     return r
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const remitos = datos.remitos?.items || []
   const hoy = datos.hoy
 
+  // Abre la ventana para editar los datos del remito
   const editarRemito = (r) => setSimple({
     titulo: `Editar remito ${r.Numero_remito}`,
     fijos: { accion: 'editar_remito', ID_Remito: r.ID_Remito },
@@ -254,6 +274,7 @@ function Remitos() {
     ],
   })
 
+  // Abre la ventana para corregir un lote del remito
   const editarLote = (r, l) => setSimple({
     titulo: `Editar lote ${l.Numero_lote}`,
     aviso: l.Cantidad_actual !== l.Cantidad_ingresada
@@ -274,6 +295,7 @@ function Remitos() {
     ],
   })
 
+  // Abre la ventana para anular un remito (pide el motivo)
   const anular = (r) => setSimple({
     titulo: `Anular remito ${r.Numero_remito}`,
     color: 'danger',
@@ -296,8 +318,10 @@ function Remitos() {
         )}
       </Encabezado>
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Filtros: buscador, proveedor, estado y fechas */}
       <BarraFiltros total={`${datos.remitos?.total || 0} remito(s)`}>
         <Buscador valor={texto} onCambiar={setTexto} placeholder="Buscar por número de remito o proveedor..." />
         <Filtro etiqueta="Proveedor">
@@ -321,6 +345,7 @@ function Remitos() {
         </Filtro>
       </BarraFiltros>
 
+      {/* Tabla de remitos (cada uno se despliega para ver sus lotes) */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -429,12 +454,14 @@ function Remitos() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={datos.remitos}
             onPagina={(n) => setFiltros((f) => ({ ...f, page: n }))}
             onPorPagina={(n) => setFiltros((f) => ({ ...f, por_pagina: n, page: 1 }))} />
         </div>
       </section>
 
+      {/* Ventanas: nuevo remito y formulario simple */}
       <FormRemito abierto={crear} datos={datos} onCerrar={() => setCrear(false)}
         onGuardar={(v) => accion(v, () => setCrear(false))} />
       <FormSimple pedido={simple} onCerrar={() => setSimple(null)}

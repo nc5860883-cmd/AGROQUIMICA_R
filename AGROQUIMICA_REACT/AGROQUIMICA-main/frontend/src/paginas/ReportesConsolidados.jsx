@@ -1,3 +1,9 @@
+// ============================================================
+// REPORTES CONSOLIDADOS
+// Reportes que cruzan información (compras vs. ventas, vencimientos,
+// proveedores...). Cada reporte tiene su dirección: /reportes/consolidados/<clave>.
+// ============================================================
+
 import { useState } from 'react'
 import { NavLink, useParams } from 'react-router-dom'
 import { usePantalla } from '../hooks/usePantalla'
@@ -7,6 +13,7 @@ import {
 } from '../componentes/Comunes'
 import { urlArchivo } from '../servicios/api'
 
+// Valores iniciales de los filtros
 const FILTROS_VACIOS = { desde: '', hasta: '', tipo: '', proveedor: '', page: 1, por_pagina: '' }
 
 // Alineación de cada columna según su formato.
@@ -19,8 +26,10 @@ function ReportesConsolidados() {
   const [filtros, setFiltros] = useState(FILTROS_VACIOS)
   const { datos, cargando, error } = usePantalla(ruta, filtros)
 
+  // Cambia un filtro y vuelve a la página 1
   const filtrar = (campo, valor) => setFiltros((f) => ({ ...f, [campo]: valor, page: 1 }))
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const { reporte } = datos
@@ -48,6 +57,7 @@ function ReportesConsolidados() {
         ))}
       </nav>
 
+      {/* Descripción del reporte elegido */}
       <section className="card mb-3">
         <div className="card-body">
           <h2 className="h5 mb-1">{reporte.titulo}</h2>
@@ -56,6 +66,7 @@ function ReportesConsolidados() {
         </div>
       </section>
 
+      {/* Filtros: rango de fechas, tipo de producto y proveedor */}
       <BarraFiltros>
         <Filtro etiqueta="Desde" tamano="chico">
           <input type="date" className="form-control" value={filtros.desde || datos.filtros?.desde || ''}
@@ -85,6 +96,7 @@ function ReportesConsolidados() {
       </BarraFiltros>
       <p className="small text-body-secondary mt-n2 mb-3">{datos.texto_filtros}</p>
 
+      {/* Tabla con los resultados del reporte */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -111,6 +123,7 @@ function ReportesConsolidados() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={datos.pagina}
             onPagina={(n) => setFiltros((f) => ({ ...f, page: n }))}
             onPorPagina={(n) => setFiltros((f) => ({ ...f, por_pagina: n, page: 1 }))} />

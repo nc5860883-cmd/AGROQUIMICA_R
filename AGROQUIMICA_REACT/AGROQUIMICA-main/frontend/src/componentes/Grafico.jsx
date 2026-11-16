@@ -1,3 +1,9 @@
+// ============================================================
+// GRÁFICOS (ApexCharts)
+// Envoltorio para dibujar gráficos que se adaptan al tema claro/oscuro.
+// Lo usan el panel principal y los reportes.
+// ============================================================
+
 import { useEffect, useRef, useState } from 'react'
 import ApexCharts from 'apexcharts'
 
@@ -25,6 +31,7 @@ function Grafico({ opciones, alto = 320 }) {
   useEffect(() => {
     if (!contenedor.current) return undefined
 
+        // Colores según el tema; las opciones de cada gráfico se suman encima
     const texto = oscuro ? '#e3ece6' : '#1c2a23'
     const grafico = new ApexCharts(contenedor.current, {
       ...opciones,

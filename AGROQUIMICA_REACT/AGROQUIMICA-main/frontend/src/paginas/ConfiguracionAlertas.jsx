@@ -1,3 +1,9 @@
+// ============================================================
+// CONFIGURACIÓN DE ALERTAS
+// Valores que usan las reglas de alertas: días de aviso de vencimiento,
+// frecuencia de revisión, egresos inusuales y envío de correos.
+// ============================================================
+
 import { useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -7,6 +13,7 @@ import { fecha } from '../servicios/formato'
 
 function ConfiguracionAlertas() {
   const { perm, ejecutar } = useOutletContext()
+  // Parámetros guardados en Django y formulario (react-hook-form)
   const { datos, cargando, error, recargar } = usePantalla('configuracion-alertas/')
   const {
     register, handleSubmit, reset, setError, formState: { errors, isSubmitting, isDirty },
@@ -19,6 +26,7 @@ function ConfiguracionAlertas() {
     if (parametros) reset(Object.fromEntries(parametros.map((p) => [p.clave, p.valor])))
   }, [parametros, reset])
 
+  // Guarda los valores; si Django rechaza alguno, marca el error en su campo
   const guardar = async (valores) => {
     const r = await ejecutar('configuracion-alertas/', valores)
     if (r.ok) {
@@ -30,11 +38,13 @@ function ConfiguracionAlertas() {
     }
   }
 
+  // Ejecuta ya la revisión de vencimientos (sin esperar a la automática)
   const revisarAhora = async () => {
     const r = await ejecutar('configuracion-alertas/', { accion: 'revisar' })
     if (r.ok) recargar()
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const puedeEditar = perm.configuracion_gestionar
@@ -47,6 +57,7 @@ function ConfiguracionAlertas() {
         )}
       </Encabezado>
 
+      {/* Formulario: una tarjeta por parámetro */}
       <form onSubmit={handleSubmit(guardar)} noValidate>
         <div className="row g-3">
           {parametros.map((p) => (

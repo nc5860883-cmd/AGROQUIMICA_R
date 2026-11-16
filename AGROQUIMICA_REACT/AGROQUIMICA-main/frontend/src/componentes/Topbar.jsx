@@ -1,9 +1,17 @@
+// ============================================================
+// BARRA SUPERIOR
+// Botón para mostrar/ocultar el menú, ubicación actual (migas de pan),
+// fecha de hoy, campana de notificaciones y botón de tema claro/oscuro.
+// ============================================================
+
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CampanaNotificaciones from './CampanaNotificaciones'
 
+// Nombre con el que se guarda el tema elegido en el navegador
 const CLAVE_TEMA = 'av:tema'
 
+// true si la página está en modo oscuro
 function esOscuro() {
   return document.documentElement.classList.contains('modo-oscuro')
 }
@@ -21,6 +29,7 @@ function aplicarTema(oscuro) {
   window.dispatchEvent(new CustomEvent('av:tema', { detail: { oscuro } }))
 }
 
+// Ej.: "16 de noviembre de 2026"
 function fechaDeHoy() {
   return new Date().toLocaleDateString('es-AR', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -39,6 +48,7 @@ function Topbar({ ubicacion, menuOculto, onAlternarMenu }) {
     return () => window.removeEventListener('scroll', marcar)
   }, [])
 
+    // Cambia entre modo claro y oscuro
   const alternarTema = () => {
     aplicarTema(!oscuro)
     setOscuro(!oscuro)
@@ -46,6 +56,7 @@ function Topbar({ ubicacion, menuOculto, onAlternarMenu }) {
 
   return (
     <header className={'topbar' + (conScroll ? ' topbar-con-scroll' : '')} id="topbar">
+            {/* Izquierda: botón del menú y ubicación actual */}
       <div className="topbar-left">
         <button
           className={'topbar-icon-btn topbar-menu-btn' + (menuOculto ? ' menu-cerrado' : '')}
@@ -80,6 +91,7 @@ function Topbar({ ubicacion, menuOculto, onAlternarMenu }) {
         </nav>
       </div>
 
+            {/* Derecha: fecha, notificaciones y tema */}
       <div className="topbar-right">
         <div className="topbar-date">
           <span className="topbar-date-ico" aria-hidden="true">

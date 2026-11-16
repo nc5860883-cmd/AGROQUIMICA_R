@@ -1,3 +1,8 @@
+// ============================================================
+// TIPOS DE PRODUCTOS
+// Alta, edición y baja de los tipos de productos (ej. herbicidas, fertilizantes).
+// ============================================================
+
 import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -76,6 +81,7 @@ function FormTipo({ tipo, abierto, onCerrar, onGuardar }) {
    Pantalla
    ------------------------------------------------------------ */
 function TiposProductos() {
+  // Permisos, datos de Django, búsqueda, ventana abierta y confirmación
   const { perm, ejecutar } = useOutletContext()
   const { datos, cargando, error, recargar } = usePantalla('tipos-productos/')
 
@@ -92,6 +98,7 @@ function TiposProductos() {
 
   const { items, pagina, irAPagina, cambiarPorPagina } = usePaginacionLocal(filtrados)
 
+  // Guarda el tipo (crear o editar) y recarga la lista
   const guardar = async (valores) => {
     const ruta = modal.tipo
       ? `tipos-productos/editar/${modal.tipo.ID_Tipo_producto}/`
@@ -103,6 +110,7 @@ function TiposProductos() {
     }
   }
 
+  // Pide confirmación antes de eliminar un tipo
   const pedirEliminar = (tipo) => {
     setConfirmar({
       titulo: 'Eliminar tipo de producto',
@@ -119,6 +127,7 @@ function TiposProductos() {
   }
 
   const estado = <EstadoPantalla cargando={cargando} error={error} datos={datos} />
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return estado
 
   return (
@@ -136,12 +145,15 @@ function TiposProductos() {
         )}
       </Encabezado>
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Buscador */}
       <BarraFiltros total={`${pagina.total} registro${pagina.total === 1 ? '' : 's'}`}>
         <Buscador valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar por nombre..." />
       </BarraFiltros>
 
+      {/* Tabla de tipos de productos */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -194,10 +206,12 @@ function TiposProductos() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={pagina} onPagina={irAPagina} onPorPagina={cambiarPorPagina} />
         </div>
       </section>
 
+      {/* Ventanas: formulario y confirmación */}
       <FormTipo
         abierto={modal.abierto}
         tipo={modal.tipo}

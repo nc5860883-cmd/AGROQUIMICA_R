@@ -1,4 +1,10 @@
-﻿
+﻿// ============================================================
+// INICIO DE SESIÓN
+// Pantalla de login: valida los campos, envía los datos a Django y
+// lleva al panel principal (o a cambiar la contraseña si es temporal).
+// ============================================================
+
+
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { iniciarSesion, prepararCSRF } from '../servicios/api'
@@ -8,6 +14,7 @@ function Login() {
   const navigate = useNavigate()
   // Mensaje que deja otra pantalla al volver al login (ej. contraseña recuperada).
   const aviso = useLocation().state?.mensaje
+  // Estado del formulario: campos, ver/ocultar contraseña, envío en curso y errores
   const [usuario, setUsuario] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [mostrarContrasena, setMostrarContrasena] = useState(false)
@@ -21,6 +28,7 @@ function Login() {
     })
   }, [])
 
+  // Revisa que los campos no estén vacíos antes de enviar
   const validarFormulario = () => {
     const nuevosErrores = {}
 
@@ -45,6 +53,7 @@ function Login() {
     return Object.keys(nuevosErrores).length === 0
   }
 
+  // Envía usuario y contraseña a Django y, si son correctos, entra al sistema
   const manejarEnvio = async (e) => {
     e.preventDefault()
     setError('')
@@ -83,6 +92,7 @@ function Login() {
 
   return (
     <main className="login-page">
+      {/* Panel izquierdo: imagen y presentación de la empresa */}
       <section className="login-panel-izquierdo">
         <div className="login-overlay"></div>
 
@@ -104,6 +114,7 @@ function Login() {
         </div>
       </section>
 
+      {/* Panel derecho: formulario de inicio de sesión */}
       <section className="login-panel-derecho">
         <div className="login-contenido">
           <img
@@ -119,6 +130,7 @@ function Login() {
           </div>
 
           <form onSubmit={manejarEnvio} noValidate>
+            {/* Campo usuario */}
             <div className="login-campo">
               <label htmlFor="usuario">Usuario</label>
 
@@ -146,6 +158,7 @@ function Login() {
               )}
             </div>
 
+            {/* Campo contraseña (con botón para mostrarla) */}
             <div className="login-campo">
               <label htmlFor="contrasena">Contraseña</label>
 

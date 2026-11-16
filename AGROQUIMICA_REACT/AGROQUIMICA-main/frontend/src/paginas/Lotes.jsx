@@ -1,3 +1,10 @@
+// ============================================================
+// LOTES
+// Consulta de los lotes ingresados (con vencimiento y stock actual).
+// Los lotes se crean desde Remitos; acá solo se consultan y se dan
+// de baja los vencidos.
+// ============================================================
+
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -19,9 +26,11 @@ function estadoLote(l, hoy, limite) {
   return { texto: 'Vigente', color: 'success' }
 }
 
+// Ventana para dar de baja un lote vencido (pide el motivo)
 function FormBaja({ lote, onCerrar, onGuardar }) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm()
 
+  // Al abrir la ventana, se limpia el formulario
   useEffect(() => {
     if (lote) reset({ observacion: '' })
   }, [lote, reset])
@@ -55,18 +64,22 @@ function FormBaja({ lote, onCerrar, onGuardar }) {
   )
 }
 
+// Pantalla principal de lotes
 function Lotes() {
   const { perm, ejecutar } = useOutletContext()
+  // Filtros (búsqueda, proveedor, página), texto del buscador y lote a dar de baja
   const [filtros, setFiltros] = useState({ q: '', proveedor: '', page: 1, por_pagina: '' })
   const [texto, setTexto] = useState('')
   const { datos, cargando, error, recargar } = usePantalla('ingreso-lote/', filtros)
   const [baja, setBaja] = useState(null)
 
+  // Espera a que el usuario deje de escribir para buscar (evita un pedido por tecla)
   useEffect(() => {
     const t = setTimeout(() => setFiltros((f) => (f.q === texto.trim() ? f : { ...f, q: texto.trim(), page: 1 })), 400)
     return () => clearTimeout(t)
   }, [texto])
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const lotes = datos.pagina?.items || []
@@ -75,8 +88,10 @@ function Lotes() {
     <div>
       <Encabezado icono="caja" titulo="Lotes" subtitulo="Lotes ingresados con los remitos, con su vencimiento y stock actual. El alta se hace desde Remitos." />
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Filtros: buscador y proveedor */}
       <BarraFiltros total={`${datos.pagina?.total || 0} lote(s)`}>
         <Buscador valor={texto} onCambiar={setTexto} placeholder="Buscar por lote, producto o remito..." />
         <Filtro etiqueta="Proveedor">
@@ -88,6 +103,7 @@ function Lotes() {
         </Filtro>
       </BarraFiltros>
 
+      {/* Tabla de lotes */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -134,6 +150,7 @@ function Lotes() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={datos.pagina}
             onPagina={(n) => setFiltros((f) => ({ ...f, page: n }))}
             onPorPagina={(n) => setFiltros((f) => ({ ...f, por_pagina: n, page: 1 }))} />

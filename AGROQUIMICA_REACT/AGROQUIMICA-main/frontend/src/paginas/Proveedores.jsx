@@ -1,3 +1,8 @@
+// ============================================================
+// PROVEEDORES
+// Alta, edición, activación/desactivación y baja de proveedores.
+// ============================================================
+
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -12,15 +17,18 @@ import {
 } from '../componentes/Comunes'
 import { reglaEmail, reglaNombre, reglaTelefono, reglaTexto } from '../servicios/validaciones'
 
+// Valores del formulario vacío (proveedor nuevo)
 const VACIO = {
   nombre_proveedor: '', telefono_proveedor: '', email_proveedor: '', direccion_proveedor: '', estado_proveedor: 'True',
 }
 
+// ---------- Ventana para registrar o editar un proveedor ----------
 function FormProveedor({ abierto, proveedor, onCerrar, onGuardar }) {
   const {
     register, handleSubmit, reset, setError, formState: { errors, isSubmitting },
   } = useForm({ defaultValues: VACIO })
 
+  // Al abrir la ventana se cargan los datos del proveedor (o se deja vacío)
   useEffect(() => {
     if (abierto) {
       reset(proveedor
@@ -43,6 +51,7 @@ function FormProveedor({ abierto, proveedor, onCerrar, onGuardar }) {
     })
   }
 
+  // Arma un campo del formulario (etiqueta + input + error) para no repetir código
   const campo = (nombre, etiqueta, reglas, props = {}) => (
     <div className={props.ancho || 'col-md-6'}>
       <label className="form-label" htmlFor={nombre}>{etiqueta}</label>
@@ -76,7 +85,9 @@ function FormProveedor({ abierto, proveedor, onCerrar, onGuardar }) {
   )
 }
 
+// ---------- Pantalla principal de proveedores ----------
 function Proveedores() {
+  // Permisos del usuario, búsqueda, datos de Django, ventana abierta y confirmación
   const { perm, ejecutar } = useOutletContext()
   const [busqueda, setBusqueda] = useState('')
   const [buscar, setBuscar] = useState('')
@@ -92,6 +103,7 @@ function Proveedores() {
 
   const { items, pagina, irAPagina, cambiarPorPagina } = usePaginacionLocal(datos?.proveedores || [])
 
+  // Ejecuta una acción en Django; si sale bien, cierra la ventana y recarga la lista
   const accion = async (ruta, valores, alTerminar) => {
     const r = await ejecutar(ruta, valores)
     if (r.ok) {
@@ -101,12 +113,14 @@ function Proveedores() {
     return r
   }
 
+  // Guarda el proveedor (crear o editar según corresponda)
   const guardar = (v) => accion(
     modal.proveedor ? `proveedores/editar/${modal.proveedor.ID_Proveedor}/` : 'proveedores/crear/',
     v,
     () => setModal({ abierto: false, proveedor: null }),
   )
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   return (
@@ -120,12 +134,15 @@ function Proveedores() {
         )}
       </Encabezado>
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Buscador */}
       <BarraFiltros total={`${pagina.total} registro${pagina.total === 1 ? '' : 's'}`}>
         <Buscador valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar por nombre, email, dirección o teléfono..." />
       </BarraFiltros>
 
+      {/* Tabla de proveedores */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -196,10 +213,12 @@ function Proveedores() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={pagina} onPagina={irAPagina} onPorPagina={cambiarPorPagina} />
         </div>
       </section>
 
+      {/* Ventanas: formulario y confirmación */}
       <FormProveedor abierto={modal.abierto} proveedor={modal.proveedor}
         onCerrar={() => setModal({ abierto: false, proveedor: null })} onGuardar={guardar} />
       <Confirmar pedido={confirmar} onCerrar={() => setConfirmar(null)} />

@@ -1,7 +1,14 @@
-﻿* {
+﻿/* ============================================================
+   ESTILOS GLOBALES MÍNIMOS
+   Se cargan en main.jsx para toda la app. Los estilos de las
+   pantallas están en src/estilos/.
+   ============================================================ */
+
+* {
   box-sizing: border-box;
 }
 
+/* La página y el contenedor de React ocupan todo el alto */
 html,
 body,
 #root {

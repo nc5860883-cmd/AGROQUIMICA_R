@@ -1,17 +1,27 @@
-﻿/* ESTILOS GENERALES DEL SISTEMA */
+﻿/* ============================================================
+   Junta los estilos del sistema original (carpeta originales/).
+   Lo importa Layout.jsx, así se aplica a todas las pantallas internas.
+   ============================================================ */
 
+/* ESTILOS GENERALES DEL SISTEMA */
+
+/* Barra lateral (menú) y barra superior */
 @import './originales/sidebar.css';
 @import './originales/topbar.css';
 
+/* Ventanas de confirmación, cierre de sesión, ajustes de Bootstrap y ojo de contraseña */
 @import './originales/confirmar.css';
 @import './originales/cerrar_sesion.css';
 @import './originales/bootstrap_ajustes.css';
 @import './originales/ojo_clave.css';
 
+/* Estilos comunes de las pantallas (tablas, tarjetas, formularios) */
 @import './originales/pantallas.css';
 
+/* Tema claro/oscuro y botones */
 @import './originales/tema.css';
 @import './originales/botones.css';
 
+/* Paginación y mensajes de validación de formularios */
 @import './originales/paginacion.css';
 @import './originales/validaciones.css';

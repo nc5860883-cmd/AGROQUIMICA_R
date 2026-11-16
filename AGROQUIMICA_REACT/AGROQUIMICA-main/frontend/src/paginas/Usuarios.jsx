@@ -1,3 +1,9 @@
+// ============================================================
+// USUARIOS
+// Alta, edición, baja/activación y eliminación de usuarios, y
+// restablecimiento de contraseñas (por correo o con una temporal).
+// ============================================================
+
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
@@ -28,6 +34,7 @@ function FormCrear({ abierto, perfiles, onCerrar, onGuardar }) {
     register, handleSubmit, reset, control, formState: { errors, isSubmitting },
   } = useForm()
 
+  // Al abrir la ventana se limpia el formulario
   useEffect(() => {
     if (abierto) reset({ Nombre_usuario: '', Apellido_usuario: '', DNI: '', ID_Perfil: '', Contrasena: '', Email_usuario: '' })
   }, [abierto, reset])
@@ -113,6 +120,7 @@ function FormEditar({ usuario, perfiles, onCerrar, onGuardar }) {
     register, handleSubmit, reset, formState: { errors, isSubmitting },
   } = useForm()
 
+  // Al abrir la ventana se cargan los datos del usuario
   useEffect(() => {
     if (usuario) {
       reset({ Email_usuario: usuario.Email_usuario, ID_Perfil: String(usuario.ID_Perfil_id) })
@@ -171,6 +179,7 @@ function FormRestablecer({ usuario, onCerrar, onEnlace, onGuardar }) {
     register, handleSubmit, reset, control, formState: { errors, isSubmitting },
   } = useForm()
 
+  // Al abrir la ventana se limpia el formulario
   useEffect(() => {
     if (usuario) reset({ nueva_contrasena: '', confirmar_contrasena: '' })
   }, [usuario, reset])
@@ -230,6 +239,7 @@ function FormRestablecer({ usuario, onCerrar, onEnlace, onGuardar }) {
 
 /* ------------------------- PANTALLA ------------------------- */
 function Usuarios() {
+  // Permisos, búsqueda, datos de Django, ventanas abiertas y confirmación
   const { perm, ejecutar } = useOutletContext()
   const [busqueda, setBusqueda] = useState('')
   const [buscar, setBuscar] = useState('')
@@ -248,6 +258,7 @@ function Usuarios() {
 
   const { items, pagina, irAPagina, cambiarPorPagina } = usePaginacionLocal(datos?.usuarios || [])
 
+  // Ejecuta una acción en Django; si sale bien, cierra la ventana y recarga la lista
   const accion = async (ruta, valores, alTerminar) => {
     const r = await ejecutar(ruta, valores)
     if (r.ok) {
@@ -257,6 +268,7 @@ function Usuarios() {
     return r
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const actualId = datos.usuario_actual?.ID_Usuario
@@ -271,12 +283,15 @@ function Usuarios() {
         )}
       </Encabezado>
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Buscador */}
       <BarraFiltros total={`${pagina.total} registro${pagina.total === 1 ? '' : 's'}`}>
         <Buscador valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar por usuario, nombre, apellido, DNI o email..." />
       </BarraFiltros>
 
+      {/* Tabla de usuarios */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -348,10 +363,12 @@ function Usuarios() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={pagina} onPagina={irAPagina} onPorPagina={cambiarPorPagina} />
         </div>
       </section>
 
+      {/* Ventanas: crear, editar, restablecer contraseña y confirmación */}
       <FormCrear abierto={crear} perfiles={datos.perfiles || []} onCerrar={() => setCrear(false)}
         onGuardar={(v) => accion('usuarios/crear/', v, () => setCrear(false))} />
       <FormEditar usuario={editar} perfiles={datos.perfiles || []} onCerrar={() => setEditar(null)}

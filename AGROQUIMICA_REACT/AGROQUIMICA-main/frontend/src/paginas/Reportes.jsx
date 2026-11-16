@@ -1,3 +1,9 @@
+// ============================================================
+// REPORTES
+// Gráficos de stock, vencimientos y evolución de ventas e ingresos,
+// con filtros por tipo, subtipo y proveedor.
+// ============================================================
+
 import { useEffect, useMemo, useState } from 'react'
 import { usePantalla } from '../hooks/usePantalla'
 import { obtenerPantalla } from '../servicios/api'
@@ -12,6 +18,7 @@ function cumple(p, f) {
   return true
 }
 
+// Tarjeta con título que contiene cada gráfico
 function Tarjeta({ titulo, subtitulo, children }) {
   return (
     <section className="card border-0 shadow-sm h-100">
@@ -24,7 +31,9 @@ function Tarjeta({ titulo, subtitulo, children }) {
   )
 }
 
+// Pantalla principal de reportes
 function Reportes() {
+  // Datos de Django, filtros elegidos y datos del gráfico de evolución
   const { datos, cargando, error } = usePantalla('reportes/')
   const [filtros, setFiltros] = useState({ tipo: '', subtipo: '', proveedor: '' })
   const [rango, setRango] = useState({ desde: '', hasta: '' })
@@ -52,13 +61,16 @@ function Reportes() {
     }
   }, [g, filtros, rango])
 
+  // Subtipos que corresponden al tipo elegido
   const subtipos = useMemo(
     () => (g?.tipos || []).find((t) => String(t.id) === filtros.tipo)?.subtipos || [],
     [g, filtros.tipo],
   )
 
+  // Stock de los productos que cumplen los filtros
   const stock = useMemo(() => (g?.stock || []).filter((p) => cumple(p, filtros)), [g, filtros])
 
+  // Opciones del gráfico de stock por producto
   const opcionesStock = useMemo(() => ({
     chart: { type: 'bar' },
     series: [
@@ -72,6 +84,7 @@ function Reportes() {
     legend: { position: 'top' },
   }), [stock])
 
+  // Opciones del gráfico de lotes por vencer (agrupados por tramos de días)
   const opcionesTramos = useMemo(() => {
     const tramos = g?.tramos
     if (!tramos) return null
@@ -89,6 +102,7 @@ function Reportes() {
     }
   }, [g, filtros])
 
+  // Opciones del gráfico de evolución de ventas e ingresos
   const opcionesEvolucion = useMemo(() => {
     if (!evolucion) return null
     return {
@@ -106,14 +120,17 @@ function Reportes() {
     }
   }, [evolucion])
 
+  // Lotes vencidos que cumplen los filtros
   const vencidos = (g?.vencidos || []).filter((v) => cumple(v, filtros))
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   return (
     <div>
       <Encabezado icono="grafico" titulo="Reportes" subtitulo="Stock, vencimientos y evolución de ventas e ingresos." />
 
+      {/* Filtros: tipo, subtipo y proveedor */}
       <section className="av-filtros">
           <div className="av-filtro">
             <label>Tipo de producto</label>

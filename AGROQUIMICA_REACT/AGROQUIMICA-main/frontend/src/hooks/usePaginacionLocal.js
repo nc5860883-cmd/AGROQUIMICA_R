@@ -1,3 +1,9 @@
+// ============================================================
+// HOOK: PAGINACIÓN EN EL NAVEGADOR
+// Para pantallas cuya lista llega completa desde Django: la corta en
+// páginas sin volver a pedir datos al servidor.
+// ============================================================
+
 import { useMemo, useState } from 'react'
 
 /*
@@ -14,11 +20,13 @@ export function usePaginacionLocal(lista, porPaginaInicial = 10) {
   // Si la lista se achica (por un filtro), no quedamos en una página vacía.
   const actual = Math.min(numero, paginas)
 
+    // Elementos de la página actual (se recalcula solo si cambia algo)
   const items = useMemo(
     () => lista.slice((actual - 1) * porPagina, actual * porPagina),
     [lista, actual, porPagina],
   )
 
+    // Mismo formato que la paginación de Django, así <Paginacion /> sirve para las dos
   return {
     items,
     pagina: {

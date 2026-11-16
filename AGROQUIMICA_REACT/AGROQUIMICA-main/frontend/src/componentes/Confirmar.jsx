@@ -1,3 +1,8 @@
+// ============================================================
+// CONFIRMACIÓN DE ACCIONES
+// Pregunta "¿Está seguro?" antes de eliminar, dar de baja o anular.
+// ============================================================
+
 import { useState } from 'react'
 import Modal from './Modal'
 import { Icono } from './Comunes'
@@ -7,6 +12,7 @@ import { Icono } from './Comunes'
   "pedido" es null (cerrada) o
   { titulo, mensaje, detalle, textoBoton, color: 'danger'|'warning'|'success', irreversible, alConfirmar }.
 */
+// Color del modal, ícono y estilo del ícono según el tipo de acción
 const VARIANTE = { danger: 'peligro', warning: 'aviso', success: '' }
 const ICONO = { danger: 'alerta', warning: 'alerta', success: 'check' }
 const CLASE_ICONO = { danger: '', warning: 'aviso', success: 'exito' }
@@ -15,6 +21,7 @@ function Confirmar({ pedido, onCerrar }) {
   const [enviando, setEnviando] = useState(false)
   const color = pedido?.color || 'danger'
 
+    // Ejecuta la acción pedida y cierra la ventana (salga bien o mal)
   const confirmar = async () => {
     setEnviando(true)
     try {

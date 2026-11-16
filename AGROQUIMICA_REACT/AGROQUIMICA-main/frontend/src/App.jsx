@@ -1,5 +1,14 @@
-﻿import { Routes, Route, Navigate } from 'react-router-dom'
+﻿// ============================================================
+// RUTAS DE LA APLICACIÓN
+// Define qué pantalla (página) se muestra según la dirección del navegador.
+//  - Rutas públicas: login y recuperación de contraseña.
+//  - Rutas internas: van dentro de <Layout />, que agrega la barra
+//    lateral, la barra superior y controla que haya sesión iniciada.
+// ============================================================
 
+import { Routes, Route, Navigate } from 'react-router-dom'
+
+// Estructura común y páginas (cada página está en src/paginas/)
 import Layout from './componentes/Layout'
 import Login from './paginas/Login'
 import { CambiarContrasena, RecuperarConfirmar, RecuperarContrasena } from './paginas/AccesoContrasena'

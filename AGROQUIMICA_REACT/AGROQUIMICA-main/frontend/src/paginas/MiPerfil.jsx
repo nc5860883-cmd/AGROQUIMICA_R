@@ -1,3 +1,9 @@
+// ============================================================
+// MI PERFIL
+// El usuario ve y edita sus datos personales y su foto, cambia su
+// contraseña y consulta los permisos de su perfil.
+// ============================================================
+
 import { useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
@@ -13,6 +19,7 @@ function marcarErrores(setError, errores, mapa) {
   })
 }
 
+// ---------- Tarjeta: datos personales y foto ----------
 function DatosPersonales({ usuario, limites, onGuardado }) {
   const { ejecutar } = useOutletContext()
   const {
@@ -33,6 +40,7 @@ function DatosPersonales({ usuario, limites, onGuardado }) {
 
   const imagen = quitar === '1' ? null : (vista || usuario.foto_url)
 
+  // Envía los datos a Django; si hay errores, los marca en cada campo
   const guardar = async (v) => {
     const r = await ejecutar('mi-perfil/guardar/', v)
     if (r.ok) onGuardado()
@@ -104,6 +112,7 @@ function DatosPersonales({ usuario, limites, onGuardado }) {
   )
 }
 
+// ---------- Tarjeta: cambio de contraseña ----------
 function CambioContrasena() {
   const { ejecutar } = useOutletContext()
   const {
@@ -111,6 +120,7 @@ function CambioContrasena() {
   } = useForm({ defaultValues: { actual: '', nueva: '', confirmar: '' } })
   const nueva = useWatch({ control, name: 'nueva' })
 
+  // Envía la contraseña actual y la nueva a Django
   const guardar = async (v) => {
     const r = await ejecutar('mi-perfil/contrasena/', v)
     if (r.ok) reset()
@@ -151,9 +161,11 @@ function CambioContrasena() {
   )
 }
 
+// ---------- Pantalla completa ----------
 function MiPerfil() {
   const { datos, cargando, error, recargar } = usePantalla('mi-perfil/')
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const { usuario, permisos, limites } = datos.datos_perfil
@@ -169,6 +181,7 @@ function MiPerfil() {
         <div className="col-lg-5">
           <CambioContrasena />
 
+          {/* Permisos del perfil del usuario */}
           <section className="card border-0 shadow-sm">
             <div className="card-header bg-body fw-semibold d-flex justify-content-between">
               <span>Mis permisos</span>

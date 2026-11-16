@@ -1,3 +1,9 @@
+// ============================================================
+// CAMPANA DE NOTIFICACIONES
+// Muestra cuántas notificaciones sin leer hay y, al hacer clic, un panel
+// con las últimas. Permite marcarlas como leídas.
+// ============================================================
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ejecutarAccion, obtenerPantalla } from '../servicios/api'
@@ -11,6 +17,7 @@ function CampanaNotificaciones() {
   const [abierta, setAbierta] = useState(false)
   const caja = useRef(null)
 
+    // Pide a Django la bandeja de notificaciones del usuario
   const cargar = useCallback(() => {
     obtenerPantalla('notificaciones/datos/')
       .then((r) => { if (r.ok) setBandeja(r.datos) })
@@ -38,11 +45,13 @@ function CampanaNotificaciones() {
     return () => document.removeEventListener('mousedown', alHacerClic)
   }, [abierta])
 
+    // Marca una notificación como leída y actualiza la bandeja
   const leer = async (id) => {
     await ejecutarAccion(`notificaciones/${id}/leer/`)
     cargar()
   }
 
+    // Marca todas como leídas
   const leerTodas = async () => {
     await ejecutarAccion('notificaciones/leer-todas/')
     cargar()
@@ -64,6 +73,7 @@ function CampanaNotificaciones() {
         {n > 0 && <span className="topbar-badge">{n > 99 ? '99+' : n}</span>}
       </button>
 
+            {/* Panel desplegable con la lista de notificaciones */}
       {abierta && (
         <div className="tb-notif-panel" role="dialog" aria-label="Notificaciones">
           <div className="tb-notif-cab">

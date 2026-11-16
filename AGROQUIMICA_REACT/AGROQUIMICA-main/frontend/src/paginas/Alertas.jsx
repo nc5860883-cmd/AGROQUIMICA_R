@@ -1,3 +1,9 @@
+// ============================================================
+// HISTORIAL DE ALERTAS
+// Lista de alertas de vencimiento de lotes y de stock mínimo.
+// Permite filtrarlas y marcarlas como atendidas.
+// ============================================================
+
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { usePantalla } from '../hooks/usePantalla'
@@ -6,20 +12,25 @@ import Paginacion from '../componentes/Paginacion'
 import { Encabezado, EstadoPantalla, Icono } from '../componentes/Comunes'
 import { fecha } from '../servicios/formato'
 
+// Valores iniciales de los filtros (sin filtrar, página 1)
 const FILTROS_VACIOS = { tipo: '', producto: '', usuario: '', fecha_desde: '', fecha_hasta: '', page: 1, por_pagina: '' }
 
 function Alertas() {
   const { perm, ejecutar } = useOutletContext()
+  // Filtros elegidos y datos que devuelve Django según esos filtros
   const [filtros, setFiltros] = useState(FILTROS_VACIOS)
   const { datos, cargando, error, recargar } = usePantalla('historial-alertas/', filtros)
 
+  // Cambia un filtro y vuelve a la página 1
   const filtrar = (campo, valor) => setFiltros((f) => ({ ...f, [campo]: valor, page: 1 }))
 
+  // Marca una alerta como atendida
   const atender = async (alerta) => {
     const r = await ejecutar(`alertas/atender/${alerta.id}/`)
     if (r.ok) recargar()
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const alertas = datos.pagina?.items || []
@@ -28,8 +39,10 @@ function Alertas() {
     <div>
       <Encabezado icono="campana" titulo="Historial de alertas" subtitulo="Avisos de vencimiento de lotes y de stock mínimo de productos." />
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Filtros: tipo, producto, usuario y rango de fechas */}
       <section className="av-filtros">
           <div className="av-filtro">
             <label>Tipo</label>
@@ -68,6 +81,7 @@ function Alertas() {
           </div>
       </section>
 
+      {/* Tabla de alertas */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -113,6 +127,7 @@ function Alertas() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={datos.pagina}
             onPagina={(n) => setFiltros((f) => ({ ...f, page: n }))}
             onPorPagina={(n) => setFiltros((f) => ({ ...f, por_pagina: n, page: 1 }))} />

@@ -1,3 +1,9 @@
+// ============================================================
+// RECUPERAR Y CAMBIAR CONTRASEÑA
+// Tres pantallas públicas: pedir el enlace de recuperación, crear una
+// contraseña nueva desde ese enlace y el cambio obligatorio de contraseña.
+// ============================================================
+
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
@@ -6,6 +12,7 @@ import { reglaContrasena, reglaEmail } from '../servicios/validaciones'
 import '../estilos/Login.css'
 
 /* Marco común (mismo diseño que el Login): foto a la izquierda y formulario a la derecha. */
+// Marco común de estas pantallas (mismo diseño que el login)
 function MarcoAcceso({ titulo, subtitulo, children }) {
   return (
     <main className="login-page">
@@ -36,6 +43,7 @@ function MarcoAcceso({ titulo, subtitulo, children }) {
   )
 }
 
+// Campo de contraseña con botón para mostrarla u ocultarla
 function CampoClave({ id, etiqueta, registro, error }) {
   const [ver, setVer] = useState(false)
   return (
@@ -50,11 +58,13 @@ function CampoClave({ id, etiqueta, registro, error }) {
   )
 }
 
+// Primer mensaje de error que devolvió Django (o uno genérico)
 function textoError(r) {
   return r.mensajes?.find((m) => m.nivel === 'error')?.texto || 'No se pudo completar la operación.'
 }
 
 /* ------------------ 1. PEDIR EL ENLACE POR CORREO ------------------ */
+// ---------- 1) Olvidé mi contraseña: pide el usuario o correo y envía un enlace ----------
 export function RecuperarContrasena() {
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm()
   const [enviado, setEnviado] = useState('')
@@ -64,6 +74,7 @@ export function RecuperarContrasena() {
     prepararCSRF().catch(() => {})
   }, [])
 
+  // Pide a Django que envíe el correo de recuperación
   const enviar = async (v) => {
     setErrorGeneral('')
     const r = await ejecutarAccion('recuperar/', v)
@@ -102,6 +113,7 @@ export function RecuperarContrasena() {
 }
 
 /* ------------------ 2. ELEGIR LA NUEVA CONTRASEÑA (enlace del correo) ------------------ */
+// ---------- 2) Enlace del correo: permite crear una contraseña nueva ----------
 export function RecuperarConfirmar() {
   // Ruta dinámica /recuperar/:uid/:token  → useParams lee los dos valores de la URL.
   const { uid, token } = useParams()
@@ -119,6 +131,7 @@ export function RecuperarConfirmar() {
       .catch(() => setEstado({ cargando: false, invalido: true, usuario: '' }))
   }, [uid, token])
 
+  // Guarda la contraseña nueva y vuelve al login
   const enviar = async (v) => {
     setErrorGeneral('')
     const r = await ejecutarAccion(`recuperar/${uid}/${token}/`, v)
@@ -166,12 +179,14 @@ export function RecuperarConfirmar() {
 }
 
 /* ------------------ 3. CAMBIO OBLIGATORIO (después de una contraseña temporal) ------------------ */
+// ---------- 3) Cambio obligatorio: cuando el usuario entra con una contraseña temporal ----------
 export function CambiarContrasena() {
   const navigate = useNavigate()
   const [error, setErrorGeneral] = useState('')
   const { register, handleSubmit, control, setError, formState: { errors, isSubmitting } } = useForm()
   const nueva = useWatch({ control, name: 'nueva_contrasena' })
 
+  // Guarda la contraseña nueva y entra al sistema
   const enviar = async (v) => {
     setErrorGeneral('')
     const r = await ejecutarAccion('usuarios/cambiar-contrasena/', v)

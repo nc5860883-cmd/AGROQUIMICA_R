@@ -1,3 +1,9 @@
+// ============================================================
+// PERMISOS DEL SISTEMA
+// Lista (solo lectura) de los permisos que se pueden asignar a los perfiles,
+// agrupados por módulo, con un buscador.
+// ============================================================
+
 import { useMemo, useState } from 'react'
 import { usePantalla } from '../hooks/usePantalla'
 import { normalizar } from '../hooks/usePaginacionLocal'
@@ -8,6 +14,7 @@ import {
 
 // Catálogo de permisos del sistema, agrupado por módulo (solo consulta).
 function Permisos() {
+  // Datos de Django y texto del buscador
   const { datos, cargando, error } = usePantalla('permisos/')
   const [busqueda, setBusqueda] = useState('')
 
@@ -24,6 +31,7 @@ function Permisos() {
       .filter((m) => m.permisos.length > 0)
   }, [datos, busqueda])
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   return (
@@ -31,8 +39,10 @@ function Permisos() {
       <Encabezado icono="llave" titulo="Permisos del sistema"
         subtitulo="Acciones que se pueden asignar a cada perfil, agrupadas por módulo." />
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Buscador de permisos */}
       <BarraFiltros total={`${modulos.reduce((t, m) => t + m.permisos.length, 0)} permiso(s) en ${modulos.length} módulo(s)`}>
         <Buscador valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar permiso por nombre, módulo o descripción..." />
       </BarraFiltros>
@@ -41,6 +51,7 @@ function Permisos() {
         <div className="card"><p className="av-vacio mb-0">No hay permisos que coincidan con la búsqueda.</p></div>
       )}
 
+      {/* Una tarjeta por módulo con sus permisos */}
       <div className="av-permisos-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
         {modulos.map((m) => (
           <section className="av-modulo" key={m.nombre} style={{ boxShadow: 'var(--m-sombra)' }}>

@@ -1,3 +1,9 @@
+// ============================================================
+// NOTIFICACIONES
+// Bandeja completa de notificaciones del perfil del usuario (vencimientos,
+// stock mínimo, egresos inusuales), con filtros y paginación.
+// ============================================================
+
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { usePantalla } from '../hooks/usePantalla'
@@ -9,9 +15,11 @@ import { fecha } from '../servicios/formato'
 
 function Notificaciones() {
   const { ejecutar } = useOutletContext()
+  // Filtros de la lista (estado, tipo, página) y datos que devuelve Django
   const [filtros, setFiltros] = useState({ estado: '', tipo: '', page: 1, por_pagina: '' })
   const { datos, cargando, error, recargar } = usePantalla('notificaciones/', filtros)
 
+  // Marca una notificación como leída
   const leer = async (n) => {
     const r = await ejecutar(`notificaciones/${n.ID_Notificacion}/leer/`)
     if (r.ok) {
@@ -20,6 +28,7 @@ function Notificaciones() {
     }
   }
 
+  // Marca todas las notificaciones como leídas
   const leerTodas = async () => {
     const r = await ejecutar('notificaciones/leer-todas/')
     if (r.ok) {
@@ -28,6 +37,7 @@ function Notificaciones() {
     }
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const lista = datos.pagina?.items || []
@@ -40,6 +50,7 @@ function Notificaciones() {
         )}
       </Encabezado>
 
+      {/* Filtros: leídas / no leídas y tipo de notificación */}
       <BarraFiltros total={`${datos.pagina?.total || 0} notificación(es)`}>
         <Filtro etiqueta="Estado" tamano="chico">
           <select className="form-select" value={filtros.estado}
@@ -58,6 +69,7 @@ function Notificaciones() {
         </Filtro>
       </BarraFiltros>
 
+      {/* Lista de notificaciones */}
       <section className="card border-0 shadow-sm">
         <ul className="list-group list-group-flush">
           {lista.map((n) => (
@@ -80,6 +92,7 @@ function Notificaciones() {
           {lista.length === 0 && <li className="list-group-item av-vacio">No hay notificaciones.</li>}
         </ul>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={datos.pagina}
             onPagina={(n) => setFiltros((f) => ({ ...f, page: n }))}
             onPorPagina={(n) => setFiltros((f) => ({ ...f, por_pagina: n, page: 1 }))} />

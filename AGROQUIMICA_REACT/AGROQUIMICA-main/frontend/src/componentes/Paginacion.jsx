@@ -1,6 +1,13 @@
+// ============================================================
+// PAGINACIÓN
+// Muestra "Mostrando X–Y de Z", los botones de página y el selector
+// "Por página". Sirve para listas paginadas en Django o en el navegador.
+// ============================================================
+
 // Paginación (mismas clases que _paginacion.html).
 // "pagina" es el objeto que manda la API: { pagina, paginas, total, desde, hasta, por_pagina, opciones }.
 
+// Decide qué números mostrar: primera, última y las vecinas a la actual
 function numerosVisibles(actual, total) {
   // 1 … 4 5 6 … 20
   const lista = []
@@ -14,6 +21,7 @@ function numerosVisibles(actual, total) {
   return lista
 }
 
+// onPagina: ir a una página · onPorPagina: cambiar cantidad por página (opcional)
 function Paginacion({ pagina, onPagina, onPorPagina }) {
   if (!pagina || !pagina.total) return null
 
@@ -25,6 +33,7 @@ function Paginacion({ pagina, onPagina, onPorPagina }) {
         Mostrando <strong>{pagina.desde}–{pagina.hasta}</strong> de <strong>{pagina.total}</strong>
       </p>
 
+            {/* Botones anterior / números / siguiente (solo si hay más de una página) */}
       {paginas > 1 && (
         <div className="pg-botones">
           <button type="button" className={'pg-btn pg-flecha' + (actual === 1 ? ' pg-off' : '')}
@@ -52,6 +61,7 @@ function Paginacion({ pagina, onPagina, onPorPagina }) {
         </div>
       )}
 
+            {/* Selector de registros por página */}
       {onPorPagina && (
         <label className="pg-tamano">
           <span>Por página</span>

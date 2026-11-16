@@ -1,3 +1,9 @@
+// ============================================================
+// VALIDACIONES DE FORMULARIOS
+// Cada función devuelve las reglas para un tipo de campo (nombre,
+// persona, email, DNI, teléfono, números, contraseña...).
+// ============================================================
+
 /*
   Reglas de validación para register() de React Hook Form.
   Son las mismas reglas que inventario/validaciones.py, así el usuario ve
@@ -6,16 +12,20 @@
   Uso:  <input {...register('Nombre', reglaNombre('El nombre'))} />
 */
 
+// Símbolos permitidos según el tipo de campo
 const SIMBOLOS_NOMBRE = " .,-/&()%+'°"
 const SIMBOLOS_PERSONA = " '-."
 const SIMBOLOS_TEXTO = " .,;:-/&()%+'\"°#¿?¡!@_\n\r"
 
+// Funciones auxiliares para revisar cada carácter
 const esLetra = (c) => /\p{L}/u.test(c)
 const esDigito = (c) => /\p{N}/u.test(c)
 const esSimbolo = (c, simbolos) => simbolos.includes(c) && c !== ' '
 
+// Quita espacios repetidos y los de los extremos
 const limpiar = (v) => String(v ?? '').replace(/\s+/g, ' ').trim()
 
+// true si hay dos símbolos pegados (ej. "--" o "..")
 function simbolosSeguidos(valor, simbolos) {
   for (let i = 1; i < valor.length; i += 1) {
     if (esSimbolo(valor[i - 1], simbolos) && esSimbolo(valor[i], simbolos)) return true
@@ -80,6 +90,7 @@ export function reglaTexto(etiqueta, maximo = 200, obligatorio = false, minimo =
   }
 }
 
+// Correo electrónico con formato nombre@dominio.com
 export function reglaEmail(etiqueta = 'El correo electrónico', obligatorio = true) {
   return {
     required: obligatorio ? `${etiqueta} es obligatorio.` : false,
@@ -91,6 +102,7 @@ export function reglaEmail(etiqueta = 'El correo electrónico', obligatorio = tr
   }
 }
 
+// DNI: solo números, 7 u 8 dígitos
 export function reglaDni(etiqueta = 'El DNI') {
   return {
     required: `${etiqueta} es obligatorio.`,
@@ -98,6 +110,7 @@ export function reglaDni(etiqueta = 'El DNI') {
   }
 }
 
+// Teléfono: números, espacios y + - ( ), entre 6 y 15 dígitos
 export function reglaTelefono(etiqueta = 'El teléfono', obligatorio = false) {
   return {
     required: obligatorio ? `${etiqueta} es obligatorio.` : false,
@@ -113,6 +126,7 @@ export function reglaTelefono(etiqueta = 'El teléfono', obligatorio = false) {
   }
 }
 
+// Número entero dentro de un rango (cantidades, stock, días)
 export function reglaEntero(etiqueta, minimo = 0, maximo = 999999, obligatorio = true) {
   return {
     required: obligatorio ? `${etiqueta} es obligatorio.` : false,
@@ -127,6 +141,7 @@ export function reglaEntero(etiqueta, minimo = 0, maximo = 999999, obligatorio =
   }
 }
 
+// Número con hasta 2 decimales, acepta coma o punto (precios)
 export function reglaDecimal(etiqueta, minimo = 0.01, maximo = 99999999, obligatorio = true) {
   return {
     required: obligatorio ? `${etiqueta} es obligatorio.` : false,

@@ -1,3 +1,9 @@
+// ============================================================
+// BARRA LATERAL (MENÚ)
+// Logo, enlace al panel, secciones del menú (vienen de Django según
+// los permisos del usuario) y, abajo, el usuario y "Cerrar sesión".
+// ============================================================
+
 import { Link, NavLink } from 'react-router-dom'
 
 // Barra lateral con las mismas clases que _sidebar.html (estilos en sidebar.css).
@@ -21,6 +27,7 @@ function Sidebar({ usuario, menu, oculto, rutaActiva, onCerrarSesion }) {
           </NavLink>
         </div>
 
+                {/* Secciones del menú: solo aparecen las que el perfil puede ver */}
         {menu.map((seccion) => (
           <div key={seccion.titulo}>
             <div className="nav-section">
@@ -40,6 +47,7 @@ function Sidebar({ usuario, menu, oculto, rutaActiva, onCerrarSesion }) {
         ))}
       </nav>
 
+            {/* Pie: datos del usuario (lleva a Mi perfil) y botón de salir */}
       <div className="sidebar-footer">
         {usuario && (
           <NavLink to="/mi-perfil/" className="sidebar-user" title="Ver y editar mi perfil">

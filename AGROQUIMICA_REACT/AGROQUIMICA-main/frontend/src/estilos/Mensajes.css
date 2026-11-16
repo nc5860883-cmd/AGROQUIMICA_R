@@ -1,4 +1,5 @@
 /* Mensajes emergentes del sistema (mismo diseño que _mensajes.html) */
+/* Contenedor en la esquina de la pantalla */
 .av-toasts {
   position: fixed;
   top: 84px;
@@ -27,11 +28,13 @@
   animation: av-toast-entra .35s cubic-bezier(.2, .8, .2, 1) both;
 }
 
+/* Color del borde según el tipo de mensaje */
 .av-toast.success { border-left-color: #15803d; }
 .av-toast.info    { border-left-color: #2563eb; }
 .av-toast.warning { border-left-color: #f59f00; }
 .av-toast.error   { border-left-color: #dc2626; }
 
+/* Botón X para cerrar */
 .av-toast-x {
   padding: 0 4px;
   border: 0;
@@ -49,6 +52,7 @@ html.modo-oscuro .av-toast {
   border-color: var(--d-border, #33403a);
 }
 
+/* Animación de entrada */
 @keyframes av-toast-entra {
   from { opacity: 0; transform: translateX(30px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -97,6 +101,7 @@ html.modo-oscuro .av-modal .modal-content {
   flex-shrink: 0;
 }
 
+/* Botones que solo tienen un ícono */
 .av-btn-ico {
   display: inline-flex;
   align-items: center;
@@ -107,6 +112,7 @@ html.modo-oscuro .av-modal .modal-content {
   border-radius: 9px;
 }
 
+/* Indicador de carga de las pantallas */
 .av-cargando {
   padding: 40px;
   text-align: center;

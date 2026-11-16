@@ -1,3 +1,8 @@
+// ============================================================
+// TARJETAS DE RESUMEN
+// Fila de indicadores (totales, activos, etc.) arriba de cada listado.
+// ============================================================
+
 // Indicadores de resumen (mismo diseño que _resumen.html).
 // El ícono es un SVG fijo que arma Django (resumen.py), por eso se inserta como HTML.
 function Resumen({ items }) {

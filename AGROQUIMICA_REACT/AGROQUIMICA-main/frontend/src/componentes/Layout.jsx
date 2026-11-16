@@ -1,3 +1,12 @@
+// ============================================================
+// LAYOUT: ESTRUCTURA DE LAS PANTALLAS INTERNAS
+// Envuelve todas las páginas que requieren sesión. Se encarga de:
+//  - comprobar la sesión (si no hay, vuelve al login),
+//  - dibujar la barra lateral (menú) y la barra superior,
+//  - mostrar los mensajes emergentes (éxito, error, aviso),
+//  - pasar a cada página: sesión, permisos, notificar() y ejecutar().
+// ============================================================
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { cerrarSesion, ejecutarAccion, obtenerSesion } from '../servicios/api'
@@ -17,6 +26,7 @@ const OTRAS_PANTALLAS = {
   '/notificaciones': 'Notificaciones',
 }
 
+// Quita la "/" final para comparar rutas (/productos/ == /productos)
 function sinBarraFinal(ruta) {
   return ruta.length > 1 ? ruta.replace(/\/+$/, '') : ruta
 }
@@ -26,6 +36,7 @@ function sinBarraFinal(ruta) {
 function Layout() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+    // Estado: datos de sesión, menú lateral oculto o visible, mensajes en pantalla
   const [sesion, setSesion] = useState(null)
   const [menuOculto, setMenuOculto] = useState(false)
   const [mensajes, setMensajes] = useState([])
@@ -54,6 +65,7 @@ function Layout() {
     setMensajes((actuales) => [...actuales, ...nuevos])
   }, [])
 
+    // Quita un mensaje emergente (al cerrarlo o cuando se vence)
   const cerrarMensaje = useCallback((id) => {
     setMensajes((actuales) => actuales.filter((m) => m.id !== id))
   }, [])
@@ -69,6 +81,7 @@ function Layout() {
     return r
   }, [notificar])
 
+    // Cerrar sesión: avisa a Django y vuelve al login
   const salir = async () => {
     try {
       await cerrarSesion()
@@ -77,6 +90,7 @@ function Layout() {
     }
   }
 
+    // Mientras llegan los datos de la sesión se muestra "Cargando…"
   if (!sesion) {
     return <p style={{ padding: '40px', textAlign: 'center' }}>Cargando…</p>
   }
@@ -92,6 +106,7 @@ function Layout() {
 
   return (
     <div className="layout">
+            {/* Íconos SVG que usa el menú lateral */}
       <Iconos />
 
       <Sidebar
@@ -115,6 +130,7 @@ function Layout() {
         </main>
       </div>
 
+            {/* Mensajes emergentes (esquina de la pantalla) */}
       <Mensajes lista={mensajes} onCerrar={cerrarMensaje} />
     </div>
   )

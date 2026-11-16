@@ -1,5 +1,16 @@
+// ============================================================
+// COMUNICACIÓN CON EL BACKEND (Django)
+// Todas las peticiones al servidor pasan por acá. Vite reenvía lo que
+// empieza con /api/ al servidor de Django (ver vite.config.js).
+//  - obtenerPantalla: pide los datos de una pantalla (GET).
+//  - ejecutarAccion: crea, edita o elimina algo (POST con CSRF).
+//  - urlArchivo: arma el enlace para abrir/descargar PDFs.
+//  - Funciones de sesión: CSRF, login, datos de sesión, cerrar sesión.
+// ============================================================
+
 import axios from 'axios'
 
+// Cliente axios con la configuración común (envía la cookie de sesión)
 const api = axios.create({
   baseURL: '/api/',
   withCredentials: true,
@@ -80,6 +91,11 @@ export function urlArchivo(ruta, params = {}) {
   return `/api/archivo/${ruta}${qs ? `?${qs}` : ''}`
 }
 
+/* ------------------------------------------------------------
+   SESIÓN Y SEGURIDAD
+   ------------------------------------------------------------ */
+
+// Lee una cookie del navegador (se usa para el token CSRF de Django)
 export function obtenerCookie(nombre) {
   const cookies = document.cookie.split(';')
 
@@ -94,10 +110,12 @@ export function obtenerCookie(nombre) {
   return null
 }
 
+// Pide a Django la cookie CSRF (necesaria antes de hacer el login)
 export async function prepararCSRF() {
   await api.get('csrf/')
 }
 
+// Envía usuario y contraseña; Django crea la sesión si son correctos
 export async function iniciarSesion(usuario, contrasena) {
   const datos = new URLSearchParams()
   datos.append('usuario', usuario)
@@ -111,6 +129,7 @@ export async function iniciarSesion(usuario, contrasena) {
   })
 }
 
+// Datos del panel principal (tarjetas, gráficos, alertas)
 export async function obtenerDatosPanel() {
   return api.get('panel-principal/')
 }
@@ -120,6 +139,7 @@ export async function obtenerSesion() {
   return api.get('sesion/')
 }
 
+// Cierra la sesión en Django
 export async function cerrarSesion() {
   return api.post('cerrar-sesion/', null, {
     headers: { 'X-CSRFToken': obtenerCookie('csrftoken') },

@@ -1,3 +1,9 @@
+// ============================================================
+// VENTANA MODAL
+// Ventana emergente que usan los formularios de crear/editar y las
+// confirmaciones. Se cierra con Escape, con la X o haciendo clic afuera.
+// ============================================================
+
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Icono } from './Comunes'
@@ -30,6 +36,7 @@ function Modal({ abierto, titulo, subtitulo, icono, variante = '', onCerrar, chi
     }
   }, [abierto, onCerrar])
 
+    // Cerrada: no se dibuja nada
   if (!abierto) return null
 
   return createPortal(
@@ -44,6 +51,7 @@ function Modal({ abierto, titulo, subtitulo, icono, variante = '', onCerrar, chi
     >
       <div className={`modal-dialog modal-dialog-centered modal-dialog-scrollable ${tamano}`}>
         <div className="modal-content">
+                    {/* Cabecera: ícono, título, subtítulo y botón de cerrar */}
           <div className="modal-header">
             {icono && <span className="av-modal-icono"><Icono nombre={icono} /></span>}
             <div>
@@ -52,6 +60,7 @@ function Modal({ abierto, titulo, subtitulo, icono, variante = '', onCerrar, chi
             </div>
             <button type="button" className="btn-close" aria-label="Cerrar" onClick={onCerrar} />
           </div>
+                    {/* Contenido y pie (botones) que manda cada pantalla */}
           <div className="modal-body">{children}</div>
           {pie && <div className="modal-footer">{pie}</div>}
         </div>

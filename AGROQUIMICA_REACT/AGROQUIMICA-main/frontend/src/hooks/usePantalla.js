@@ -1,3 +1,8 @@
+// ============================================================
+// HOOK: DATOS DE UNA PANTALLA
+// Lo usan casi todas las páginas para traer su información de Django.
+// ============================================================
+
 import { useCallback, useEffect, useState } from 'react'
 import { obtenerPantalla } from '../servicios/api'
 
@@ -15,6 +20,8 @@ export function usePantalla(ruta, params = {}) {
   const [respuesta, setRespuesta] = useState({ pedido: null, datos: null, error: '' })
   const [version, setVersion] = useState(0)
 
+    // "pedido" identifica la consulta actual (ruta + filtros + versión).
+    // Cambiar "version" con recargar() fuerza a pedir los datos de nuevo.
   const filtros = JSON.stringify(params)
   const pedido = `${ruta}|${filtros}|${version}`
 
@@ -44,6 +51,7 @@ export function usePantalla(ruta, params = {}) {
     }
   }, [ruta, filtros, pedido])
 
+    // Vuelve a pedir los datos (por ejemplo, después de guardar algo)
   const recargar = useCallback(() => setVersion((v) => v + 1), [])
 
   return {

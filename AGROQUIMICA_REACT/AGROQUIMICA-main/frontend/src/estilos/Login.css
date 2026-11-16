@@ -1,4 +1,10 @@
-﻿:root {
+﻿/* ============================================================
+   PANTALLA DE LOGIN
+   También la usan las pantallas de recuperar y cambiar contraseña.
+   ============================================================ */
+
+/* Colores de la pantalla de login */
+:root {
   --login-verde-900: #0d3b26;
   --login-verde-800: #134a31;
   --login-verde-700: #1b5e3c;
@@ -9,6 +15,7 @@
   --login-borde: #dce5de;
 }
 
+/* Página dividida en dos paneles */
 .login-page {
   min-height: 100vh;
   display: flex;
@@ -16,6 +23,7 @@
   font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
+/* ---------- Panel izquierdo: foto y presentación ---------- */
 .login-panel-izquierdo {
   position: relative;
   width: 52%;
@@ -83,6 +91,7 @@
   line-height: 1.7;
 }
 
+/* ---------- Panel derecho: formulario ---------- */
 .login-panel-derecho {
   width: 48%;
   min-height: 100vh;
@@ -100,6 +109,7 @@
   margin: auto 0;
 }
 
+/* Logo y textos de bienvenida */
 .login-logo {
   display: block;
   width: 175px;
@@ -133,6 +143,7 @@
   font-size: 14px;
 }
 
+/* Campos (usuario y contraseña) */
 .login-campo {
   margin-bottom: 23px;
 }
@@ -167,6 +178,7 @@
   color: #a3aea7;
 }
 
+/* Contraseña con botón para mostrarla */
 .login-password-contenedor {
   position: relative;
 }
@@ -188,6 +200,7 @@
   cursor: pointer;
 }
 
+/* Mensajes de error (de cada campo y general) */
 .login-error-campo {
   display: block;
   margin-top: 7px;
@@ -206,6 +219,7 @@
   line-height: 1.5;
 }
 
+/* Enlace "¿Olvidó su contraseña?" */
 .login-recuperar {
   display: block;
   width: fit-content;
@@ -221,6 +235,7 @@
   text-decoration: underline;
 }
 
+/* Botón Ingresar */
 .login-boton {
   width: 100%;
   height: 52px;
@@ -244,6 +259,7 @@
   cursor: not-allowed;
 }
 
+/* Pie del formulario y de la página */
 .login-pie-formulario {
   margin: 25px 0 0;
   color: var(--login-gris);
@@ -258,6 +274,7 @@
   text-align: center;
 }
 
+/* Tablets: se achica el panel izquierdo */
 @media (max-width: 850px) {
   .login-panel-izquierdo {
     width: 43%;
@@ -275,6 +292,7 @@
   }
 }
 
+/* Celulares: solo el formulario */
 @media (max-width: 600px) {
   .login-page {
     display: block;

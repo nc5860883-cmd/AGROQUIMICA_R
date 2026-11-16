@@ -1,3 +1,9 @@
+// ============================================================
+// AUDITORÍA
+// Registro de todo lo que hacen los usuarios (altas, cambios, bajas,
+// inicios de sesión...). Solo para el administrador.
+// ============================================================
+
 import { useState } from 'react'
 import { usePantalla } from '../hooks/usePantalla'
 import { obtenerPantalla } from '../servicios/api'
@@ -7,6 +13,7 @@ import Modal from '../componentes/Modal'
 import { Encabezado, EstadoPantalla, Icono } from '../componentes/Comunes'
 import { fecha } from '../servicios/formato'
 
+// Valores iniciales de los filtros
 const FILTROS_VACIOS = { entidad: '', accion: '', usuario: '', fecha_desde: '', fecha_hasta: '', page: 1, por_pagina: '' }
 
 // Mismas acciones (y textos) que el filtro del sistema original.
@@ -36,6 +43,7 @@ const ACCIONES = {
 const textoAccion = (a = '') => ACCIONES[a]
   || a.replaceAll('_', ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase())
 
+// Color de la etiqueta según la acción (rojo: borrar/baja, verde: crear, azul: modificar)
 function colorAccion(a = '') {
   if (a.includes('ELIMIN') || a.includes('BAJA') || a.includes('ANUL')) return 'danger'
   if (a.includes('CREA') || a.includes('ACTIV')) return 'success'
@@ -47,18 +55,22 @@ function colorAccion(a = '') {
 const mostrar = (v) => (v === null || v === undefined || v === '' ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v))
 
 function Auditoria() {
+  // Filtros, datos de Django y registro abierto en el detalle
   const [filtros, setFiltros] = useState(FILTROS_VACIOS)
   const { datos, cargando, error } = usePantalla('auditoria/', filtros)
   const [detalle, setDetalle] = useState(null)
 
+  // Cambia un filtro y vuelve a la página 1
   const filtrar = (campo, valor) => setFiltros((f) => ({ ...f, [campo]: valor, page: 1 }))
 
+  // Pide a Django el detalle (antes / después) de un registro
   const verDetalle = async (id) => {
     setDetalle({ cargando: true })
     const r = await obtenerPantalla(`auditoria/detalle/${id}/`)
     setDetalle(r.ok ? r.datos : { error: 'No se pudo cargar el detalle.' })
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   const registros = datos.pagina?.items || []
@@ -67,8 +79,10 @@ function Auditoria() {
     <div>
       <Encabezado icono="auditoria" titulo="Auditoría" subtitulo="Registro de las acciones realizadas por los usuarios en el sistema." />
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Filtros: entidad, acción, usuario y rango de fechas */}
       <section className="av-filtros">
           <div className="av-filtro">
             <label>Sección</label>
@@ -104,6 +118,7 @@ function Auditoria() {
           </div>
       </section>
 
+      {/* Tabla de registros de auditoría */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -133,12 +148,14 @@ function Auditoria() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={datos.pagina}
             onPagina={(n) => setFiltros((f) => ({ ...f, page: n }))}
             onPorPagina={(n) => setFiltros((f) => ({ ...f, por_pagina: n, page: 1 }))} />
         </div>
       </section>
 
+      {/* Ventana con el detalle del registro (datos antes y después del cambio) */}
       <Modal abierto={Boolean(detalle)} titulo="Detalle del registro" icono="auditoria" onCerrar={() => setDetalle(null)} tamano="modal-lg">
         {detalle?.cargando && <p className="text-center my-3">Cargando…</p>}
         {detalle?.error && <div className="alert alert-danger">{detalle.error}</div>}

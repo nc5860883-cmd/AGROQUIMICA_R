@@ -1,3 +1,9 @@
+// ============================================================
+// PERFILES DE ACCESO
+// Alta, edición, activación y baja de perfiles. Cada perfil es un grupo
+// de permisos que después se asigna a los usuarios.
+// ============================================================
+
 import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
@@ -13,11 +19,13 @@ import {
 import { reglaNombre } from '../servicios/validaciones'
 import { iconoModulo } from '../servicios/iconos'
 
+// ---------- Ventana para registrar o editar un perfil y sus permisos ----------
 function FormPerfil({ abierto, perfil, grupos, esAdmin, onCerrar, onGuardar }) {
   const {
     register, handleSubmit, reset, setValue, control, formState: { errors, isSubmitting },
   } = useForm()
 
+  // Al abrir la ventana se cargan el nombre y los permisos del perfil
   useEffect(() => {
     if (abierto) {
       reset({
@@ -119,7 +127,9 @@ function FormPerfil({ abierto, perfil, grupos, esAdmin, onCerrar, onGuardar }) {
   )
 }
 
+// ---------- Pantalla principal de perfiles ----------
 function Perfiles() {
+  // Permisos, datos de Django, búsqueda, ventanas abiertas y confirmación
   const { perm, ejecutar } = useOutletContext()
   const { datos, cargando, error, recargar } = usePantalla('perfiles/')
   const [busqueda, setBusqueda] = useState('')
@@ -127,6 +137,7 @@ function Perfiles() {
   const [confirmar, setConfirmar] = useState(null)
   const [verPermisos, setVerPermisos] = useState(null)
 
+  // Filtrado en el navegador según el texto del buscador
   const filtrados = useMemo(() => {
     const texto = normalizar(busqueda.trim())
     const lista = datos?.perfiles || []
@@ -137,6 +148,7 @@ function Perfiles() {
   const admins = datos?.perfiles_admin || []
   const esAdminVer = Boolean(verPermisos && admins.includes(verPermisos.Nombre_perfil))
 
+  // Ejecuta una acción en Django; si sale bien, cierra la ventana y recarga la lista
   const accion = async (ruta, valores, alTerminar) => {
     const r = await ejecutar(ruta, valores)
     if (r.ok) {
@@ -145,11 +157,13 @@ function Perfiles() {
     }
   }
 
+  // Guarda el perfil (crear o editar) con los permisos marcados
   const guardar = (v) => {
     const ruta = modal.perfil ? `perfiles/editar/${modal.perfil.ID_Perfil}/` : 'perfiles/crear/'
     return accion(ruta, v, () => setModal({ abierto: false, perfil: null }))
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   return (
@@ -163,12 +177,15 @@ function Perfiles() {
         )}
       </Encabezado>
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Buscador */}
       <BarraFiltros total={`${pagina.total} registro${pagina.total === 1 ? '' : 's'}`}>
         <Buscador valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar perfil..." />
       </BarraFiltros>
 
+      {/* Tabla de perfiles */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -240,10 +257,12 @@ function Perfiles() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={pagina} onPagina={irAPagina} onPorPagina={cambiarPorPagina} />
         </div>
       </section>
 
+      {/* Ventana: formulario del perfil */}
       <FormPerfil
         abierto={modal.abierto}
         perfil={modal.perfil}
@@ -253,6 +272,7 @@ function Perfiles() {
         onGuardar={guardar}
       />
 
+      {/* Ventana: ver los permisos de un perfil (solo lectura) */}
       <Modal abierto={Boolean(verPermisos)} titulo={`Permisos de ${verPermisos?.Nombre_perfil || ''}`} icono="llave"
         subtitulo={esAdminVer ? 'Perfil del sistema: tiene todos los permisos' : `${(verPermisos?.permisos || []).length} permiso(s) asignado(s)`}
         tamano="modal-xl" onCerrar={() => setVerPermisos(null)}>
@@ -287,6 +307,7 @@ function Perfiles() {
         })()}
       </Modal>
 
+      {/* Ventana de confirmación */}
       <Confirmar pedido={confirmar} onCerrar={() => setConfirmar(null)} />
     </div>
   )

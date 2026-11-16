@@ -1,3 +1,10 @@
+// ============================================================
+// PRODUCTOS
+// Catálogo de productos en tarjetas (foto, presentación, precio y stock).
+// Permite crear, modificar y eliminar productos, ver sus lotes y
+// registrar egresos por venta.
+// ============================================================
+
 import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext, useSearchParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
@@ -14,14 +21,17 @@ import { fecha, numero } from '../servicios/formato'
 import { reglaDecimal, reglaEntero, reglaNombre, reglaTexto } from '../servicios/validaciones'
 import '../estilos/Productos.css'
 
+// Unidades de medida disponibles para la presentación
 const UNIDADES = [
   { valor: 'kg', texto: 'Kilogramos (kg)' },
   { valor: 'g', texto: 'Gramos (g)' },
   { valor: 'litros', texto: 'Litros (L)' },
 ]
 
+// Formatea un número como precio en pesos ($ 1.234,50)
 const pesos = (v) => Number(v || 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 })
 
+// Texto de la presentación (ej. "20 litros")
 function presentacion(p) {
   if (!p.Cantidad_presentacion) return '—'
   const cant = Number(p.Cantidad_presentacion).toLocaleString('es-AR')
@@ -35,6 +45,7 @@ function FormProducto({ abierto, producto, datos, onCerrar, onGuardar }) {
     register, handleSubmit, reset, control, setValue, setError, formState: { errors, isSubmitting },
   } = useForm()
 
+  // Al abrir la ventana se cargan los datos del producto (o se deja vacío)
   useEffect(() => {
     if (!abierto) return
     reset({
@@ -53,12 +64,14 @@ function FormProducto({ abierto, producto, datos, onCerrar, onGuardar }) {
     })
   }, [abierto, producto, reset])
 
+  // Valores que se observan en tiempo real (tipo elegido, foto nueva, quitar foto)
   const [tipoElegido, archivo, quitar] = useWatch({
     control, name: ['ID_Tipo_producto', 'Imagen_producto', 'quitar_imagen'],
   })
 
   const vistaPrevia = useVistaPrevia(archivo)
 
+  // Listas de opciones: tipos activos, subtipos del tipo elegido y proveedores
   const tipos = (datos.tipos_productos || []).filter(
     (t) => t.Estado_tipo_producto || String(t.ID_Tipo_producto) === String(producto?.ID_Tipo_producto_id),
   )
@@ -69,6 +82,7 @@ function FormProducto({ abierto, producto, datos, onCerrar, onGuardar }) {
 
   const fotoActual = quitar === '1' ? null : (vistaPrevia || producto?.Imagen_producto)
 
+  // Envía el producto a Django
   const enviar = async (valores) => {
     const r = await onGuardar(valores)
     Object.entries(r?.errores || {}).forEach(([c, m]) => setError(c, { type: 'servidor', message: m }))
@@ -215,10 +229,12 @@ function FormEgreso({ abierto, productos, onCerrar, onGuardar }) {
     register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting },
   } = useForm()
 
+  // Al abrir la ventana se limpia el formulario
   useEffect(() => {
     if (abierto) reset({ producto: '', lote: '', cantidad: '', descripcion: '' })
   }, [abierto, reset])
 
+  // Producto, lote y cantidad elegidos (para mostrar el stock disponible)
   const [productoId, loteId, cantidad] = useWatch({ control, name: ['producto', 'lote', 'cantidad'] })
   const producto = productos.find((p) => String(p.id) === String(productoId))
   const lote = producto?.lotes.find((l) => String(l.id) === String(loteId))
@@ -314,10 +330,12 @@ function FormEgreso({ abierto, productos, onCerrar, onGuardar }) {
 
 /* ------------------------- PANTALLA ------------------------- */
 function Productos() {
+  // Permisos, parámetros de la URL y datos de Django
   const { perm, ejecutar } = useOutletContext()
   const [parametros, setParametros] = useSearchParams()
   const { datos, cargando, error, recargar } = usePantalla('productos/')
 
+  // Filtros, orden y ventanas abiertas
   const [busqueda, setBusqueda] = useState('')
   const [tipo, setTipo] = useState('')
   const [estado, setEstado] = useState('')
@@ -331,6 +349,7 @@ function Productos() {
 
   const productos = useMemo(() => datos?.productos || [], [datos])
 
+  // Aplica búsqueda, tipo, estado y orden en el navegador
   const filtrados = useMemo(() => {
     const texto = normalizar(busqueda.trim())
     const lista = productos.filter((p) => {
@@ -365,6 +384,7 @@ function Productos() {
     tipos: datos?.total_tipos || 0,
   }), [productos, datos])
 
+  // Ejecuta una acción en Django; si sale bien, cierra la ventana y recarga la lista
   const accion = async (ruta, valores, alTerminar) => {
     const r = await ejecutar(ruta, valores)
     if (r.ok) {
@@ -374,11 +394,13 @@ function Productos() {
     return r
   }
 
+  // Cierra el egreso y quita ?egreso=1 de la dirección
   const cerrarEgreso = () => {
     setEgreso(false)
     if (parametros.get('egreso')) setParametros({}, { replace: true })
   }
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   return (
@@ -413,6 +435,7 @@ function Productos() {
         ))}
       </div>
 
+      {/* Filtros: buscador, tipo, estado y orden */}
       <BarraFiltros total={`${filtrados.length} de ${productos.length} productos`}>
         <Buscador valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar por nombre, tipo, subtipo o proveedor..." />
         <Filtro etiqueta="Tipo">
@@ -520,9 +543,11 @@ function Productos() {
       )}
 
       <div className="mt-3">
+        {/* Paginación */}
         <Paginacion pagina={pagina} onPagina={irAPagina} onPorPagina={cambiarPorPagina} />
       </div>
 
+      {/* Ventanas: producto, egreso, lotes del producto, foto ampliada y confirmación */}
       <FormProducto abierto={modal.abierto} producto={modal.producto} datos={datos}
         onCerrar={() => setModal({ abierto: false, producto: null })}
         onGuardar={(v) => accion(

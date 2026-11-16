@@ -1,3 +1,8 @@
+// ============================================================
+// SUBTIPOS DE PRODUCTOS
+// Alta, edición y baja de subtipos. Cada subtipo pertenece a un tipo de producto.
+// ============================================================
+
 import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -12,11 +17,13 @@ import {
 } from '../componentes/Comunes'
 import { reglaNombre, reglaTexto } from '../servicios/validaciones'
 
+// ---------- Ventana para registrar o editar un subtipo ----------
 function FormSubtipo({ subtipo, tipos, abierto, onCerrar, onGuardar }) {
   const {
     register, handleSubmit, reset, formState: { errors, isSubmitting },
   } = useForm()
 
+  // Al abrir la ventana se cargan los datos del subtipo (o se deja vacío)
   useEffect(() => {
     if (abierto) {
       reset({
@@ -82,13 +89,16 @@ function FormSubtipo({ subtipo, tipos, abierto, onCerrar, onGuardar }) {
   )
 }
 
+// ---------- Pantalla principal de subtipos ----------
 function Subtipos() {
+  // Permisos, datos de Django, búsqueda, ventana abierta y confirmación
   const { perm, ejecutar } = useOutletContext()
   const { datos, cargando, error, recargar } = usePantalla('subtipos/')
   const [busqueda, setBusqueda] = useState('')
   const [modal, setModal] = useState({ abierto: false, subtipo: null })
   const [confirmar, setConfirmar] = useState(null)
 
+  // Filtrado en el navegador según el texto del buscador
   const filtrados = useMemo(() => {
     const lista = datos?.subtipos || []
     const texto = normalizar(busqueda.trim())
@@ -100,6 +110,7 @@ function Subtipos() {
 
   const { items, pagina, irAPagina, cambiarPorPagina } = usePaginacionLocal(filtrados)
 
+  // Guarda el subtipo (crear o editar) y recarga la lista
   const guardar = async (valores) => {
     const ruta = modal.subtipo ? `subtipos/editar/${modal.subtipo.ID_Subtipo}/` : 'subtipos/crear/'
     const r = await ejecutar(ruta, valores)
@@ -109,6 +120,7 @@ function Subtipos() {
     }
   }
 
+  // Pide confirmación antes de eliminar un subtipo
   const pedirEliminar = (s) => setConfirmar({
     titulo: 'Eliminar subtipo',
     mensaje: `¿Deseas eliminar el subtipo "${s.Nombre_subtipo}"?`,
@@ -119,6 +131,7 @@ function Subtipos() {
     },
   })
 
+  // Mientras cargan los datos (o si hay error) se muestra el estado de carga
   if (!datos) return <EstadoPantalla cargando={cargando} error={error} datos={datos} />
 
   return (
@@ -132,12 +145,15 @@ function Subtipos() {
         )}
       </Encabezado>
 
+      {/* Tarjetas de resumen */}
       <Resumen items={datos.resumen} />
 
+      {/* Buscador */}
       <BarraFiltros total={`${pagina.total} registro${pagina.total === 1 ? '' : 's'}`}>
         <Buscador valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar subtipo..." />
       </BarraFiltros>
 
+      {/* Tabla de subtipos */}
       <section className="card border-0 shadow-sm">
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
@@ -182,10 +198,12 @@ function Subtipos() {
           </table>
         </div>
         <div className="card-footer bg-body">
+          {/* Paginación */}
           <Paginacion pagina={pagina} onPagina={irAPagina} onPorPagina={cambiarPorPagina} />
         </div>
       </section>
 
+      {/* Ventanas: formulario y confirmación */}
       <FormSubtipo
         abierto={modal.abierto}
         subtipo={modal.subtipo}

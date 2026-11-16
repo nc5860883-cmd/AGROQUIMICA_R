@@ -1,3 +1,11 @@
+/* ============================================================
+   ESTILOS ANTIGUOS DE PRODUCTOS (SIN USO)
+   Productos.jsx importa este archivo, pero ya no usa ninguna de estas
+   clases (productos-contenedor, productos-tabla, producto-dato...).
+   La pantalla actual usa las clases av-producto-* de Moderno.css.
+   Se puede borrar este archivo junto con su import en Productos.jsx.
+   ============================================================ */
+
 
 .productos-contenedor {
   padding: 28px;

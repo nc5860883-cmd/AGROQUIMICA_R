@@ -15,6 +15,7 @@ const ICONO_MODULO = {
   Auditoría: 'auditoria',
 }
 
+// Devuelve el ícono del módulo; si no está en la lista, usa una llave
 export function iconoModulo(nombre) {
   return ICONO_MODULO[nombre] || 'llave'
 }
