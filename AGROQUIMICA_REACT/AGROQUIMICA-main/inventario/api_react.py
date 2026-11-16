@@ -37,7 +37,7 @@ from . import perfil, views, vistas_parcial2
 
 
 # ------------------------------------------------------------
-# 1. CAPTURA DEL CONTEXTO DE render()
+# 1. CAPTURA DEL CONTEXTO DE render ( )
 # ------------------------------------------------------------
 
 _captura = threading.local()
