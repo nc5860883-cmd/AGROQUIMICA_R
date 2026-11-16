@@ -1,9 +1,13 @@
 ﻿
 import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { iniciarSesion, prepararCSRF } from '../servicios/api'
 import '../estilos/Login.css'
 
 function Login() {
+  const navigate = useNavigate()
+  // Mensaje que deja otra pantalla al volver al login (ej. contraseña recuperada).
+  const aviso = useLocation().state?.mensaje
   const [usuario, setUsuario] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [mostrarContrasena, setMostrarContrasena] = useState(false)
@@ -53,12 +57,12 @@ function Login() {
       const respuesta = await iniciarSesion(usuario.trim(), contrasena)
 
       if (respuesta.data.redirect) {
+        // Navegación interna con React Router: no recarga la página
+        // y nunca sale hacia las plantillas de Django.
         if (respuesta.data.redirect.includes('cambiar-contrasena')) {
-          // Mantener el cambio obligatorio de contraseña en Django.
-          window.location.href = `http://localhost:8001${respuesta.data.redirect}`
+          navigate('/cambiar-contrasena')
         } else {
-          // Acceder al panel principal de React.
-          window.location.href = 'http://localhost:5173/panel-principal'
+          navigate('/panel-principal')
         }
       } else {
         setError('No se recibió una dirección de destino.')
@@ -182,15 +186,19 @@ function Login() {
               )}
             </div>
 
+            {aviso && !error && (
+              <div className="alert alert-success py-2" role="status">{aviso}</div>
+            )}
+
             {error && (
               <div className="login-mensaje-error" role="alert">
                 {error}
               </div>
             )}
 
-            <a href="http://localhost:8001/recuperar/" className="login-recuperar">
+            <Link to="/recuperar" className="login-recuperar">
               ¿Olvidaste tu contraseña?
-            </a>
+            </Link>
 
             <button
               type="submit"

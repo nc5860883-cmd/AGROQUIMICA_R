@@ -12,3 +12,6 @@
 
 @import './originales/tema.css';
 @import './originales/botones.css';
+
+@import './originales/paginacion.css';
+@import './originales/validaciones.css';

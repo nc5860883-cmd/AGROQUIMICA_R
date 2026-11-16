@@ -1,4 +1,4 @@
-﻿import email
+import email
 import hashlib
 import re
 import time as time_module
@@ -59,6 +59,7 @@ from .resumen import indicador
 from .permissions import (
     usuario_con_acceso, usuario_con_accion, puede, puede_accion,
     catalogo_plano, permisos_asignados, PERFILES_ADMIN, menu_para,
+    permisos_ui,
 )
 
 from .models import (
@@ -6764,3 +6765,77 @@ def recuperar_confirmar(request, uidb64, token):
     return render(request, 'inventario/recuperar_confirmar.html', contexto)
 
 
+
+
+# ------------------------------------------------------------
+# API PARA REACT: SESIÓN Y MENÚ LATERAL
+# ------------------------------------------------------------
+
+@require_GET
+def sesion_api(request):
+    """Devuelve el usuario logueado y el menú lateral según sus permisos.
+
+    React lo usa para dibujar la barra lateral (mismas secciones e
+    íconos que _sidebar.html) y para saber si la sesión sigue activa.
+    """
+
+    usuario = usuario_autenticado(request)
+
+    if not usuario:
+        return JsonResponse(
+            {'ok': False, 'error': 'La sesión no está activa.'},
+            status=401
+        )
+
+    menu = [
+        {
+            'titulo': seccion['titulo'],
+            'items': [
+                {
+                    'modulo': item['modulo'],
+                    'icono': item['icono'],
+                    'texto': item['texto'],
+                    # Ruta de la pantalla (React usa las mismas rutas).
+                    'url': reverse(item['url']),
+                }
+                for item in seccion['items']
+            ],
+        }
+        for seccion in menu_para(usuario)
+    ]
+
+    return JsonResponse({
+        'ok': True,
+        'usuario': {
+            'usuario': usuario.Usuario,
+            'nombre': usuario.Nombre_usuario,
+            'apellido': usuario.Apellido_usuario,
+            'perfil': usuario.ID_Perfil.Nombre_perfil,
+            'foto': usuario.Foto_usuario.url if usuario.Foto_usuario else None,
+        },
+        'menu': menu,
+        # Mismos permisos que usan los templates como perm.productos_gestionar
+        'perm': permisos_ui(usuario),
+        'inactividad_ms': settings.INACTIVIDAD_SEGUNDOS * 1000,
+    })
+
+
+@require_POST
+def cerrar_sesion_api(request):
+    """Cierra la sesión desde React (registra la auditoría igual que la vista HTML)."""
+
+    usuario = usuario_autenticado(request)
+
+    if usuario:
+        registrar_auditoria(
+            usuario=usuario,
+            entidad="USUARIOS",
+            objeto=usuario,
+            accion="CIERRE_SESION",
+            antes={},
+            despues={"accion": "Cierre de sesión"}
+        )
+
+    request.session.flush()
+
+    return JsonResponse({'ok': True})

@@ -1,9 +1,10 @@
-﻿from django.conf import settings
+from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
 from inventario import views
 from inventario import perfil
 from inventario import vistas_parcial2
+from inventario import api_react
 
 urlpatterns = [
     # Login
@@ -15,6 +16,11 @@ urlpatterns = [
     path('api/login/', views.login_api, name='login_api'),
     path('api/panel-principal/', views.panel_principal_api, name='panel_principal_api'),
     path('api/productos/', views.productos_api, name='productos_api'),
+    path('api/sesion/', views.sesion_api, name='sesion_api'),
+    path('api/cerrar-sesion/', views.cerrar_sesion_api, name='cerrar_sesion_api'),
+    path('api/pantalla/<path:ruta>', api_react.pantalla_api, name='pantalla_api'),
+    path('api/accion/<path:ruta>', api_react.accion_api, name='accion_api'),
+    path('api/archivo/<path:ruta>', api_react.archivo_api, name='archivo_api'),
     path('cerrar-sesion/', views.cerrar_sesion, name='cerrar_sesion'),
 
     # Panel principal
