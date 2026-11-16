@@ -163,6 +163,27 @@ html.modo-oscuro .pg-tamano select {
     color: var(--d-text);
 }
 
+/* La lista que se despliega también va oscura (si no, el navegador la pinta blanca). */
+html.modo-oscuro .pg-tamano select {
+    color-scheme: dark;
+}
+
+html.modo-oscuro .pg-tamano select:focus {
+    background: var(--d-surface-2);
+    border-color: #2e9d66;
+    box-shadow: 0 0 0 3px rgba(46, 157, 102, .25);
+}
+
+html.modo-oscuro .pg-tamano select option {
+    background: var(--d-surface-2);
+    color: var(--d-text);
+}
+
+html.modo-oscuro .pg-tamano select option:checked {
+    background: #1f7a4d;
+    color: #ffffff;
+}
+
 html.modo-oscuro .pg-btn:hover {
     background: var(--d-green-bg);
     border-color: var(--d-green-bd);
