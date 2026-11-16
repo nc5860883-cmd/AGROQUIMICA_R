@@ -298,7 +298,7 @@
                                         data-nombre="{{ producto.Nombre_producto }}"
                                         data-descripcion="{{ producto.Descripcion_producto|default:'' }}"
                                         data-precio="{{ producto.Precio|unlocalize }}"
-                                        data-cantidad="{{ producto.Cantidad_presentacion|default_if_none:''|unlocalize }}"
+                                        data-cantidad="{{ producto.Cantidad_presentacion|default_if_none:''|floatformat:'-2u' }}"
                                         data-unidad="{{ producto.Unidad_medida_producto|default:'' }}"
                                         data-estado="{{ producto.Estado_producto }}"
                                         data-minimo="{% if stock %}{{ stock.Stock_minimo }}{% endif %}"
@@ -495,8 +495,8 @@
                                         <label class="form-label" for="crear_precio">Precio por presentación</label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
-                                            <input type="number" class="form-control" id="crear_precio" name="Precio"
-                                                   step="0.01" min="0.01" required>
+                                            <input type="text" class="form-control" id="crear_precio" name="Precio"
+                                                   inputmode="decimal" autocomplete="off" required>
                                         </div>
                                     </div>
 
@@ -512,7 +512,7 @@
                                     <div class="col-sm-6">
                                         <label class="form-label" for="crear_cantidad">Cantidad de presentación</label>
                                         <input type="number" class="form-control" id="crear_cantidad" name="Cantidad_presentacion"
-                                               step="0.01" min="0.01" value="1" required>
+                                               step="1" min="1" value="1" inputmode="numeric" required>
                                     </div>
 
                                     <div class="col-sm-6">
@@ -668,8 +668,8 @@
                                         <label class="form-label" for="edit_precio">Precio por presentación</label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
-                                            <input type="number" class="form-control" id="edit_precio" name="Precio"
-                                                   step="0.01" min="0.01" required>
+                                            <input type="text" class="form-control" id="edit_precio" name="Precio"
+                                                   inputmode="decimal" autocomplete="off" required>
                                         </div>
                                     </div>
 
@@ -685,7 +685,7 @@
                                     <div class="col-sm-6">
                                         <label class="form-label" for="edit_cantidad">Cantidad de presentación</label>
                                         <input type="number" class="form-control" id="edit_cantidad" name="Cantidad_presentacion"
-                                               step="0.01" min="0.01" required>
+                                               step="1" min="1" inputmode="numeric" required>
                                     </div>
 
                                     <div class="col-sm-6">

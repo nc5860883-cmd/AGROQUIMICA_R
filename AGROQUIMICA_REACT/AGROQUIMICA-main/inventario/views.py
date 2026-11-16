@@ -3014,10 +3014,10 @@ def _leer_datos_producto(request, estado_por_defecto, unidad_actual=None,
     if error:
         return None, error
 
-    cantidad_presentacion, error = validar_decimal(
+    # La cantidad de presentación es un número entero (ej.: 1 litro, 20 kg).
+    cantidad_presentacion, error = validar_entero(
         request.POST.get('Cantidad_presentacion', ''),
-        'Cantidad de presentación',
-        Decimal('0.01'), Decimal('99999.99')
+        'Cantidad de presentación', 1, 99999
     )
     if error:
         return None, error

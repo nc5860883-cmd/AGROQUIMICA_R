@@ -26,7 +26,7 @@
         Descripcion_producto:  { tipo: 'texto',   max: 200 },
         Precio:                { tipo: 'decimal', min: 0.01, max: 99999999.99, dec: 2 },
         Stock_minimo:          { tipo: 'entero',  min: 0, max: 999999 },
-        Cantidad_presentacion: { tipo: 'decimal', min: 0.01, max: 99999.99, dec: 2 },
+        Cantidad_presentacion: { tipo: 'entero',  min: 1, max: 99999 },
 
         // Egreso por venta y baja por vencimiento
         cantidad:              { tipo: 'entero',  min: 1, max: 999999 },

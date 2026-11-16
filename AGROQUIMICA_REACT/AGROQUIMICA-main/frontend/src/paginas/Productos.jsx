@@ -55,7 +55,8 @@ function FormProducto({ abierto, producto, datos, onCerrar, onGuardar }) {
       ID_Subtipo: producto?.ID_Subtipo_id ? String(producto.ID_Subtipo_id) : '',
       Precio: producto ? String(producto.Precio) : '',
       Stock_minimo: producto?.stock ? String(producto.stock.Stock_minimo) : '',
-      Cantidad_presentacion: producto?.Cantidad_presentacion ? String(producto.Cantidad_presentacion) : '',
+      // Number() quita los decimales vacíos que manda Django ("20.00" → "20")
+      Cantidad_presentacion: producto?.Cantidad_presentacion ? String(Number(producto.Cantidad_presentacion)) : '',
       Unidad_medida_producto: producto?.Unidad_medida_producto || '',
       Estado_producto: producto?.Estado_producto || 'Activo',
       proveedores: (producto?.proveedores || []).map((p) => String(p.ID_Proveedor)),
@@ -185,8 +186,8 @@ function FormProducto({ abierto, producto, datos, onCerrar, onGuardar }) {
             <div className="col-md-4">
               <label className="form-label">Presentación</label>
               <div className="input-group">
-                <input inputMode="decimal" className={'form-control' + (errors.Cantidad_presentacion ? ' is-invalid' : '')}
-                  placeholder="Cantidad" {...register('Cantidad_presentacion', reglaDecimal('La cantidad de la presentación'))} />
+                <input inputMode="numeric" className={'form-control' + (errors.Cantidad_presentacion ? ' is-invalid' : '')}
+                  placeholder="Cantidad" {...register('Cantidad_presentacion', reglaEntero('La cantidad de la presentación', 1, 99999))} />
                 <select className={'form-select' + (errors.Unidad_medida_producto ? ' is-invalid' : '')} style={{ maxWidth: 140 }}
                   {...register('Unidad_medida_producto', { required: 'Seleccione una unidad.' })}>
                   <option value="">Unidad</option>
