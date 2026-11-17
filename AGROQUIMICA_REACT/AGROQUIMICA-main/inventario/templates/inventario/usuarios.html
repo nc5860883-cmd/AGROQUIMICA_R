@@ -158,11 +158,12 @@
                             <td>
                                 <div class="us-acciones">
                                     {% if perm.usuarios_gestionar %}
-                                    <!-- EDITAR -->
+                                    <!-- EDITAR
+                                         El ID se sigue enviando: se usa para armar la dirección
+                                         del formulario, pero ya no se muestra en el modal. -->
                                     <button type="button" class="us-icon-btn" title="Editar usuario" aria-label="Editar usuario"
                                         onclick="abrirModalEditar(
                                             '{{ usuario.ID_Usuario }}',
-                                            '{{ usuario.ID_Perfil.ID_Perfil }}',
                                             '{{ usuario.ID_Perfil.Nombre_perfil|escapejs }}',
                                             '{{ usuario.DNI }}',
                                             '{{ usuario.Usuario|escapejs }}',
@@ -195,8 +196,6 @@
 
                                             <button type="button" class="us-icon-btn us-peligro" title="Dar de baja" aria-label="Dar de baja"
                                                 onclick="abrirModalBaja(
-                                                    '{{ usuario.ID_Usuario }}',
-                                                    '{{ usuario.ID_Perfil.ID_Perfil }}',
                                                     '{{ usuario.ID_Perfil.Nombre_perfil|escapejs }}',
                                                     '{{ usuario.DNI }}',
                                                     '{{ usuario.Usuario|escapejs }}',
@@ -353,6 +352,7 @@
 
 <!-- ==========================================
      MODAL MODIFICAR USUARIO
+     (sin el ID; el perfil muestra solo su nombre)
      ========================================== -->
 
 <div class="us-modal" id="modalEditar">
@@ -373,23 +373,13 @@
             <div class="us-grid">
 
                 <div class="us-grupo">
-                    <label>ID_usuario</label>
-                    <input class="form-control" type="text" id="editar_ID_Usuario" readonly>
+                    <label>Usuario</label>
+                    <input class="form-control" type="text" id="editar_Usuario" readonly>
                 </div>
 
                 <div class="us-grupo">
                     <label>Perfil</label>
-                    <input class="form-control" type="text" id="editar_ID_Perfil" readonly>
-                </div>
-
-                <div class="us-grupo">
-                    <label>DNI</label>
-                    <input class="form-control" type="text" id="editar_DNI" readonly>
-                </div>
-
-                <div class="us-grupo">
-                    <label>Usuario</label>
-                    <input class="form-control" type="text" id="editar_Usuario" readonly>
+                    <input class="form-control" type="text" id="editar_Perfil" readonly>
                 </div>
 
                 <div class="us-grupo">
@@ -403,11 +393,16 @@
                 </div>
 
                 <div class="us-grupo">
+                    <label>DNI</label>
+                    <input class="form-control" type="text" id="editar_DNI" readonly>
+                </div>
+
+                <div class="us-grupo">
                     <label>Estado</label>
                     <input class="form-control" type="text" id="editar_Estado" readonly>
                 </div>
 
-                <div class="us-grupo">
+                <div class="us-grupo us-full">
                     <label>Última modificación</label>
                     <input class="form-control" type="text" id="editar_Fecha" readonly>
                 </div>
@@ -488,7 +483,6 @@
                            pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]{8,}"
                            title="Mínimo 8 caracteres, con al menos una mayúscula, una minúscula y un número, sin espacios."
                            required>
-                    <span class="us-hint">Mínimo 8 caracteres, con mayúscula, minúscula y número. No puede contener el nombre de usuario.</span>
                 </div>
 
                 <div class="us-grupo us-full">
@@ -516,6 +510,7 @@
 
 <!-- ==========================================
      MODAL DAR DE BAJA USUARIO
+     (sin el ID; el perfil muestra solo su nombre)
      ========================================== -->
 
 <div class="us-modal" id="modalBaja">
@@ -536,23 +531,13 @@
             <div class="us-grid">
 
                 <div class="us-grupo">
-                    <label>ID_usuario</label>
-                    <input class="form-control" type="text" id="baja_ID_Usuario" readonly>
+                    <label>Usuario</label>
+                    <input class="form-control" type="text" id="baja_Usuario" readonly>
                 </div>
 
                 <div class="us-grupo">
                     <label>Perfil</label>
-                    <input class="form-control" type="text" id="baja_ID_Perfil" readonly>
-                </div>
-
-                <div class="us-grupo">
-                    <label>DNI</label>
-                    <input class="form-control" type="text" id="baja_DNI" readonly>
-                </div>
-
-                <div class="us-grupo">
-                    <label>Usuario</label>
-                    <input class="form-control" type="text" id="baja_Usuario" readonly>
+                    <input class="form-control" type="text" id="baja_Perfil" readonly>
                 </div>
 
                 <div class="us-grupo">
@@ -566,13 +551,18 @@
                 </div>
 
                 <div class="us-grupo">
-                    <label>Email</label>
-                    <input class="form-control" type="email" id="baja_Email" readonly>
+                    <label>DNI</label>
+                    <input class="form-control" type="text" id="baja_DNI" readonly>
                 </div>
 
                 <div class="us-grupo">
                     <label>Estado</label>
                     <input class="form-control" type="text" id="baja_Estado" readonly>
+                </div>
+
+                <div class="us-grupo us-full">
+                    <label>Email</label>
+                    <input class="form-control" type="email" id="baja_Email" readonly>
                 </div>
 
                 <div class="us-grupo">
@@ -677,11 +667,11 @@ function cerrarModalCrear() {
 }
 
 
-/* MODAL MODIFICAR USUARIO */
+/* MODAL MODIFICAR USUARIO
+   El ID no se muestra: solo se usa para la dirección del formulario. */
 
 function abrirModalEditar(
     idUsuario,
-    idPerfil,
     nombrePerfil,
     dni,
     usuario,
@@ -692,15 +682,14 @@ function abrirModalEditar(
     fecha
 ) {
 
-    document.getElementById('editar_ID_Usuario').value = idUsuario;
-    document.getElementById('editar_ID_Perfil').value = idPerfil + ' — ' + nombrePerfil;
-    document.getElementById('editar_DNI').value = dni;
     document.getElementById('editar_Usuario').value = usuario;
+    document.getElementById('editar_Perfil').value = nombrePerfil;
     document.getElementById('editar_Apellido').value = apellido;
     document.getElementById('editar_Nombre').value = nombre;
-    document.getElementById('editar_Email').value = email;
+    document.getElementById('editar_DNI').value = dni;
     document.getElementById('editar_Estado').value = estado === 'True' ? 'Activo' : 'Inactivo';
     document.getElementById('editar_Fecha').value = fecha;
+    document.getElementById('editar_Email').value = email;
 
     document.getElementById('formEditarUsuario').action = '/usuarios/editar/' + idUsuario + '/';
 
@@ -761,11 +750,10 @@ function cerrarModalRestablecer() {
 }
 
 
-/* MODAL DAR DE BAJA */
+/* MODAL DAR DE BAJA
+   La dirección del formulario ya trae el ID (urlBaja). */
 
 function abrirModalBaja(
-    idUsuario,
-    idPerfil,
     nombrePerfil,
     dni,
     usuario,
@@ -777,14 +765,13 @@ function abrirModalBaja(
     urlBaja
 ) {
 
-    document.getElementById('baja_ID_Usuario').value = idUsuario;
-    document.getElementById('baja_ID_Perfil').value = idPerfil + ' — ' + nombrePerfil;
-    document.getElementById('baja_DNI').value = dni;
     document.getElementById('baja_Usuario').value = usuario;
+    document.getElementById('baja_Perfil').value = nombrePerfil;
     document.getElementById('baja_Apellido').value = apellido;
     document.getElementById('baja_Nombre').value = nombre;
-    document.getElementById('baja_Email').value = email;
+    document.getElementById('baja_DNI').value = dni;
     document.getElementById('baja_Estado').value = 'Activo';
+    document.getElementById('baja_Email').value = email;
     document.getElementById('baja_Fecha_Modificacion').value = fechaModificacion;
     document.getElementById('baja_Fecha_Actual').value = fechaBaja;
 
@@ -838,12 +825,12 @@ function generarUsuario() {
     const apellido = apellidoInput.value
         .trim()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[̀-ͯ]/g, "");
 
     const nombre = nombreInput.value
         .trim()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[̀-ͯ]/g, "");
 
     if (apellido && nombre) {
         usuarioPreview.value = (apellido + nombre.charAt(0))
