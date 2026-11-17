@@ -225,9 +225,36 @@ function FormProducto({ abierto, producto, datos, onCerrar, onGuardar }) {
 }
 
 /* ------------------------- EGRESO ------------------------- */
+
+// Días que faltan para una fecha "dd/mm/aaaa" (0 = vence hoy)
+function diasHasta(texto) {
+  const [d, m, a] = String(texto || '').split('/').map(Number)
+  if (!d || !m || !a) return null
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  return Math.round((new Date(a, m - 1, d) - hoy) / 86400000)
+}
+
+// Texto y color del aviso de vencimiento de un lote
+function avisoVencimiento(dias) {
+  if (dias === null) return null
+  if (dias <= 0) return { texto: 'Vence hoy', clase: 'peligro' }
+  if (dias <= 30) return { texto: `Vence en ${dias} día${dias === 1 ? '' : 's'}`, clase: 'peligro' }
+  if (dias <= 90) return { texto: `Vence en ${dias} días`, clase: 'aviso' }
+  return { texto: `Vence en ${Math.round(dias / 30)} meses`, clase: 'ok' }
+}
+
+/*
+  Ventana "Registrar egreso por venta" en tres pasos:
+   1. Producto (solo el nombre; el stock se muestra en un resumen aparte)
+   2. Lote: tarjetas con número, vencimiento, unidades disponibles, remito y
+      proveedor. El primero es el que vence antes (FEFO) y viene marcado.
+   3. Cantidad, con una vista previa de lo que queda en el lote y en el stock.
+  Estilos: clases egr-* en Moderno.css (modo claro y oscuro).
+*/
 function FormEgreso({ abierto, productos, onCerrar, onGuardar }) {
   const {
-    register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting },
+    register, handleSubmit, reset, control, setValue, trigger, formState: { errors, isSubmitting },
   } = useForm()
 
   // Al abrir la ventana se limpia el formulario
@@ -235,94 +262,167 @@ function FormEgreso({ abierto, productos, onCerrar, onGuardar }) {
     if (abierto) reset({ producto: '', lote: '', cantidad: '', descripcion: '' })
   }, [abierto, reset])
 
-  // Producto, lote y cantidad elegidos (para mostrar el stock disponible)
+  // Producto, lote y cantidad elegidos (para el resumen y la vista previa)
   const [productoId, loteId, cantidad] = useWatch({ control, name: ['producto', 'lote', 'cantidad'] })
   const producto = productos.find((p) => String(p.id) === String(productoId))
   const lote = producto?.lotes.find((l) => String(l.id) === String(loteId))
   const cant = Number(cantidad) || 0
+  const cantValida = lote && cant > 0 && cant <= lote.cantidad
+
+  const quedaLote = lote ? Math.max(lote.cantidad - cant, 0) : 0
+  const stockFinal = producto ? Math.max(producto.stock - cant, 0) : 0
+  const bajoMinimo = producto && cantValida && stockFinal <= producto.stock_minimo
+  const porcentajeLote = lote ? Math.round((quedaLote / lote.cantidad) * 100) : 0
 
   return (
-    <Modal abierto={abierto} titulo="Registrar egreso por venta" icono="venta" onCerrar={onCerrar} tamano="modal-lg"
+    <Modal abierto={abierto} titulo="Registrar egreso por venta" subtitulo="Descuenta unidades de un lote por una venta"
+      icono="venta" onCerrar={onCerrar} tamano="modal-lg"
       pie={(
         <>
           <button type="button" className="btn btn-outline-secondary" onClick={onCerrar}>Cancelar</button>
           <button type="submit" form="formEgreso" className="btn av-btn-egreso" disabled={isSubmitting || productos.length === 0}>
-            Registrar egreso
+            {isSubmitting ? 'Registrando…' : 'Registrar egreso'}
           </button>
         </>
       )}>
       {productos.length === 0 ? (
-        <p className="text-body-secondary mb-0">No hay productos activos con lotes vigentes para vender.</p>
+        <div className="egr-vacio">
+          <Icono nombre="caja" />
+          <p>No hay productos activos con lotes vigentes para vender.</p>
+        </div>
       ) : (
-        <form id="formEgreso" onSubmit={handleSubmit(onGuardar)} noValidate className="row g-3">
-          <p className="small text-body-secondary mb-0">
-            Los lotes se ofrecen por vencimiento: primero el que vence antes (FEFO).
-          </p>
-          <div className="col-md-6">
-            <label className="form-label">Producto</label>
+        <form id="formEgreso" onSubmit={handleSubmit(onGuardar)} noValidate className="egr">
+
+          {/* PASO 1: producto */}
+          <section className="egr-paso">
+            <div className="egr-paso-titulo"><span className="egr-num">1</span> Producto</div>
             <select className={'form-select' + (errors.producto ? ' is-invalid' : '')}
               {...register('producto', {
                 required: 'Seleccione un producto.',
                 onChange: (e) => {
                   const p = productos.find((x) => String(x.id) === e.target.value)
+                  // Se sugiere el lote que vence primero (FEFO)
                   setValue('lote', p?.lotes[0] ? String(p.lotes[0].id) : '')
+                  if (cantidad) trigger('cantidad')
                 },
               })}>
               <option value="">Seleccione un producto</option>
-              {productos.map((p) => <option key={p.id} value={p.id}>{p.nombre} (stock {p.stock})</option>)}
+              {productos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
             </select>
             <ErrorCampo error={errors.producto} />
-          </div>
-          <div className="col-md-6">
-            <label className="form-label">Lote</label>
-            <select className={'form-select' + (errors.lote ? ' is-invalid' : '')} disabled={!producto}
-              {...register('lote', { required: 'Seleccione un lote válido.' })}>
-              <option value="">Seleccione un lote</option>
-              {(producto?.lotes || []).map((l) => (
-                <option key={l.id} value={l.id}>Lote {l.numero} · vence {l.vence} · {l.cantidad} un.</option>
-              ))}
-            </select>
+
+            {producto && (
+              <div className="egr-resumen">
+                <div><span>Stock total</span><strong>{numero(producto.stock)} un.</strong></div>
+                <div><span>Stock mínimo</span><strong>{numero(producto.stock_minimo)} un.</strong></div>
+                <div><span>Lotes disponibles</span><strong>{producto.lotes.length}</strong></div>
+              </div>
+            )}
+          </section>
+
+          {/* PASO 2: lote */}
+          <section className={`egr-paso${producto ? '' : ' egr-paso-inactivo'}`}>
+            <div className="egr-paso-titulo">
+              <span className="egr-num">2</span> Lote
+              <span className="egr-ayuda">Ordenados por vencimiento: primero el que vence antes</span>
+            </div>
+
+            {!producto ? (
+              <p className="egr-pista">Elija un producto para ver sus lotes.</p>
+            ) : (
+              <div className="egr-lotes" role="radiogroup" aria-label="Lote">
+                {producto.lotes.map((l, i) => {
+                  const aviso = avisoVencimiento(diasHasta(l.vence))
+                  const elegido = String(l.id) === String(loteId)
+                  return (
+                    <label key={l.id} className={`egr-lote${elegido ? ' elegido' : ''}`}>
+                      <input type="radio" value={String(l.id)}
+                        {...register('lote', {
+                          required: 'Seleccione un lote.',
+                          onChange: () => { if (cantidad) trigger('cantidad') },
+                        })} />
+                      <div className="egr-lote-cabecera">
+                        <strong className="egr-lote-numero">Lote {l.numero}</strong>
+                        {i === 0 && <span className="egr-sugerido">Sugerido</span>}
+                      </div>
+                      <div className="egr-lote-disponible">
+                        <span className="egr-lote-cantidad">{numero(l.cantidad)}</span>
+                        <span className="egr-lote-unidad">unidades disponibles</span>
+                      </div>
+                      <div className="egr-lote-pie">
+                        <span><Icono nombre="calendario" /> {l.vence}</span>
+                        {aviso && <span className={`egr-vence ${aviso.clase}`}>{aviso.texto}</span>}
+                      </div>
+                      <div className="egr-lote-origen" title={`Remito ${l.remito} · ${l.proveedor}`}>
+                        Remito {l.remito} · {l.proveedor}
+                      </div>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
             <ErrorCampo error={errors.lote} />
-          </div>
-          {lote && (
-            <div className="col-12">
-              <div className="bg-body-tertiary rounded-3 p-2 small">
-                Remito {lote.remito} · {lote.proveedor} · Disponible en el lote: <strong>{lote.cantidad}</strong> un.
+          </section>
+
+          {/* PASO 3: cantidad y descripción */}
+          <section className={`egr-paso${lote ? '' : ' egr-paso-inactivo'}`}>
+            <div className="egr-paso-titulo"><span className="egr-num">3</span> Cantidad a vender</div>
+            <div className="egr-cantidad">
+              <div className="input-group egr-cantidad-campo">
+                <input inputMode="numeric" placeholder="0" disabled={!lote}
+                  className={'form-control' + (errors.cantidad ? ' is-invalid' : '')}
+                  {...register('cantidad', {
+                    ...reglaEntero('La cantidad', 1, 999999),
+                    validate: (v) => !lote || Number(v) <= lote.cantidad || `El lote solo tiene ${lote.cantidad} unidades.`,
+                  })} />
+                <span className="input-group-text">unidades</span>
               </div>
+              {lote && (
+                <button type="button" className="btn btn-outline-secondary egr-todo"
+                  onClick={() => setValue('cantidad', String(lote.cantidad), { shouldValidate: true })}>
+                  Todo el lote ({numero(lote.cantidad)})
+                </button>
+              )}
             </div>
-          )}
-          <div className="col-md-6">
-            <label className="form-label">Cantidad a vender</label>
-            <input inputMode="numeric" className={'form-control' + (errors.cantidad ? ' is-invalid' : '')}
-              {...register('cantidad', {
-                ...reglaEntero('La cantidad', 1, 999999),
-                validate: (v) => !lote || Number(v) <= lote.cantidad || `El lote solo tiene ${lote.cantidad} unidades.`,
-              })} />
             <ErrorCampo error={errors.cantidad} />
-          </div>
-          {lote && cant > 0 && (
-            <div className="col-md-6 d-flex gap-2 align-items-end">
-              <div className="flex-fill border rounded-3 p-2 text-center">
-                <div className="small text-body-secondary">Queda en el lote</div>
-                <strong>{Math.max(lote.cantidad - cant, 0)}</strong>
+
+            {/* Vista previa: cómo quedan el lote y el stock */}
+            {cantValida && (
+              <div className="egr-previa">
+                <div className="egr-previa-item">
+                  <span className="egr-previa-rotulo">Queda en el lote {lote.numero}</span>
+                  <div className="egr-previa-valores">
+                    <span className="egr-antes">{numero(lote.cantidad)}</span>
+                    <span className="egr-flecha">→</span>
+                    <strong>{numero(quedaLote)}</strong>
+                  </div>
+                  <div className="egr-barra"><span style={{ width: `${porcentajeLote}%` }} /></div>
+                  {quedaLote === 0 && <span className="egr-nota">El lote quedará vacío.</span>}
+                </div>
+                <div className={`egr-previa-item${bajoMinimo ? ' alerta' : ''}`}>
+                  <span className="egr-previa-rotulo">Stock del producto</span>
+                  <div className="egr-previa-valores">
+                    <span className="egr-antes">{numero(producto.stock)}</span>
+                    <span className="egr-flecha">→</span>
+                    <strong>{numero(stockFinal)}</strong>
+                  </div>
+                  {bajoMinimo ? (
+                    <span className="egr-nota alerta">
+                      <Icono nombre="alerta" /> Quedará en o por debajo del mínimo ({numero(producto.stock_minimo)}).
+                    </span>
+                  ) : (
+                    <span className="egr-nota">Mínimo: {numero(producto.stock_minimo)} un.</span>
+                  )}
+                </div>
               </div>
-              <div className="flex-fill border rounded-3 p-2 text-center">
-                <div className="small text-body-secondary">Stock del producto</div>
-                <strong className={producto.stock - cant <= producto.stock_minimo ? 'text-danger' : ''}>
-                  {Math.max(producto.stock - cant, 0)}
-                </strong>
-              </div>
-            </div>
-          )}
-          {producto && lote && producto.stock - cant <= producto.stock_minimo && cant > 0 && (
-            <div className="col-12"><div className="alert alert-warning py-2 mb-0">El stock quedará en o por debajo del mínimo ({producto.stock_minimo}).</div></div>
-          )}
-          <div className="col-12">
-            <label className="form-label">Descripción (opcional)</label>
+            )}
+
+            <label className="form-label mt-3">Descripción <span className="text-body-secondary fw-normal">(opcional)</span></label>
             <textarea rows={2} className={'form-control' + (errors.descripcion ? ' is-invalid' : '')} maxLength={200}
+              placeholder="Ej.: venta a cliente, factura N.º…"
               {...register('descripcion', reglaTexto('La descripción', 200))} />
             <ErrorCampo error={errors.descripcion} />
-          </div>
+          </section>
         </form>
       )}
     </Modal>

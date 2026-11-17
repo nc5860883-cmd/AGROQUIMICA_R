@@ -1556,3 +1556,308 @@ html.modo-oscuro .ad {
   .ad-cambio-valores { grid-template-columns: 1fr; }
   .ad-flecha { transform: rotate(90deg); }
 }
+
+/* ============================================================
+   PRODUCTOS: VENTANA "REGISTRAR EGRESO POR VENTA" (clases egr-*)
+   Usa las variables --m-* (cambian solas en modo oscuro).
+   ============================================================ */
+.egr {
+  --egr-acento: #dc2626;
+  --egr-acento-bg: #fdecec;
+  --egr-acento-bd: #f5c9c9;
+  --egr-panel: #f7faf8;
+  --egr-ok-bg: #e7f6ec;    --egr-ok-tx: #146c3f;
+  --egr-aviso-bg: #fff4d6; --egr-aviso-tx: #8a5a00;
+  --egr-peligro-bg: #fde8e8; --egr-peligro-tx: #b91c1c;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  color: var(--m-texto);
+}
+
+html.modo-oscuro .egr {
+  --egr-acento: #f87171;
+  --egr-acento-bg: #2c1616;
+  --egr-acento-bd: #5c2626;
+  --egr-panel: #1a2620;
+  --egr-ok-bg: #12301f;    --egr-ok-tx: #6ee7a1;
+  --egr-aviso-bg: #3a2d0f; --egr-aviso-tx: #fbbf24;
+  --egr-peligro-bg: #381616; --egr-peligro-tx: #f87171;
+}
+
+.egr-paso { transition: opacity .2s ease; }
+.egr-paso-inactivo { opacity: .55; }
+
+.egr-paso-titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--m-texto);
+}
+
+.egr-num {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: .75rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--m-degrade);
+}
+
+.egr-ayuda {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--m-suave);
+}
+
+.egr-pista {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  font-size: .88rem;
+  color: var(--m-suave);
+  text-align: center;
+}
+
+/* Resumen del producto elegido */
+.egr-resumen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 10px;
+  border: 1px solid var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  background: var(--m-borde);
+  overflow: hidden;
+}
+
+.egr-resumen > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: var(--egr-panel);
+}
+
+.egr-resumen span,
+.egr-previa-rotulo {
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--m-suave);
+}
+
+.egr-resumen strong { font-size: 1rem; color: var(--m-texto); }
+
+/* Tarjetas de lotes */
+.egr-lotes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.egr-lote {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  background: var(--m-tarjeta);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.egr-lote:hover { border-color: color-mix(in srgb, var(--egr-acento) 45%, var(--m-borde)); }
+
+.egr-lote.elegido {
+  border-color: var(--egr-acento);
+  background: var(--egr-acento-bg);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--egr-acento) 18%, transparent);
+}
+
+/* El radio real queda oculto pero accesible con teclado */
+.egr-lote input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.egr-lote:has(input:focus-visible) {
+  outline: 2px solid var(--egr-acento);
+  outline-offset: 2px;
+}
+
+.egr-lote-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.egr-lote-numero { font-size: .92rem; color: var(--m-texto); }
+
+.egr-sugerido {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--egr-ok-tx);
+  background: var(--egr-ok-bg);
+}
+
+.egr-lote-disponible {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.egr-lote-cantidad {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--m-texto);
+}
+
+.egr-lote-unidad { font-size: .78rem; color: var(--m-suave); }
+
+.egr-lote-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: .8rem;
+  color: var(--m-suave);
+}
+
+.egr-lote-pie > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.egr-lote-pie .av-ico { width: 14px; height: 14px; }
+
+.egr-vence {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+.egr-vence.ok      { background: var(--egr-ok-bg);      color: var(--egr-ok-tx); }
+.egr-vence.aviso   { background: var(--egr-aviso-bg);   color: var(--egr-aviso-tx); }
+.egr-vence.peligro { background: var(--egr-peligro-bg); color: var(--egr-peligro-tx); }
+
+.egr-lote-origen {
+  padding-top: 8px;
+  border-top: 1px dashed var(--m-borde);
+  font-size: .76rem;
+  color: var(--m-suave);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cantidad */
+.egr-cantidad {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.egr-cantidad-campo { flex: 1 1 220px; max-width: 320px; }
+.egr-cantidad-campo .form-control { font-size: 1.05rem; font-weight: 600; }
+
+/* Vista previa del resultado */
+.egr-previa {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.egr-previa-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  background: var(--egr-panel);
+}
+
+.egr-previa-item.alerta {
+  border-color: color-mix(in srgb, var(--egr-aviso-tx) 40%, transparent);
+  background: var(--egr-aviso-bg);
+}
+
+.egr-previa-valores {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.egr-previa-valores strong { font-size: 1.35rem; color: var(--m-texto); }
+.egr-antes { font-size: .95rem; color: var(--m-suave); text-decoration: line-through; }
+.egr-flecha { color: var(--m-suave); }
+
+.egr-barra {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--m-borde);
+  overflow: hidden;
+}
+
+.egr-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--m-degrade);
+  transition: width .25s ease;
+}
+
+.egr-nota {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  color: var(--m-suave);
+}
+
+.egr-nota.alerta { color: var(--egr-aviso-tx); font-weight: 600; }
+.egr-nota .av-ico { width: 14px; height: 14px; flex: none; }
+
+.egr-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0;
+  color: var(--m-suave);
+  text-align: center;
+}
+
+.egr-vacio .av-ico { width: 34px; height: 34px; }
+.egr-vacio p { margin: 0; }
+
+@media (max-width: 576px) {
+  .egr-resumen,
+  .egr-previa { grid-template-columns: 1fr; }
+  .egr-cantidad-campo { max-width: none; }
+}
