@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
 RUTAS_LIBRES = {
-    '/', '/login/', '/api/csrf/', '/api/login/', '/cerrar-sesion/', '/bloqueo/', '/bloqueo/registrar/',
+    '/', '/login/', '/api/csrf/', '/api/login/', '/cerrar-sesion/', '/api/cerrar-sesion/', '/bloqueo/', '/bloqueo/registrar/',
 }
 
 class SesionInactivaMiddleware:

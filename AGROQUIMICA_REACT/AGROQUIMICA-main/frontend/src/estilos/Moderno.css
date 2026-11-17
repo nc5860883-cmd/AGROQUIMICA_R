@@ -1104,3 +1104,71 @@ html.modo-oscuro .btn.av-btn-egreso:disabled {
   color: #c9a3a3 !important;
   box-shadow: none;
 }
+
+/* ============================================================
+   AUDITORÍA: UN COLOR POR ACCIÓN
+   Cada etiqueta usa --acc-bg (fondo) y --acc-tx (texto).
+   En modo oscuro se redefinen las mismas variables.
+   ============================================================ */
+.av-accion { --acc-bg: #edf1ee; --acc-tx: #55695d; }
+
+.badge.av-accion {
+  background: var(--acc-bg) !important;
+  color: var(--acc-tx) !important;
+  border: 1px solid color-mix(in srgb, var(--acc-tx) 18%, transparent);
+  white-space: nowrap;
+}
+
+.badge.av-accion::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.av-accion-creacion              { --acc-bg: #e3f4ea; --acc-tx: #146c3f; }
+.av-accion-modificacion          { --acc-bg: #e3edfd; --acc-tx: #1d4ed8; }
+.av-accion-eliminacion           { --acc-bg: #fde8e8; --acc-tx: #b91c1c; }
+.av-accion-anulacion             { --acc-bg: #fde7f0; --acc-tx: #be185d; }
+.av-accion-inicio_sesion         { --acc-bg: #dcf5f3; --acc-tx: #0f766e; }
+.av-accion-cierre_sesion         { --acc-bg: #e8ecf2; --acc-tx: #475569; }
+.av-accion-bloqueo_inactividad   { --acc-bg: #fff2cc; --acc-tx: #8a5a00; }
+.av-accion-egreso_stock          { --acc-bg: #ffedd5; --acc-tx: #c2410c; }
+.av-accion-egreso_vencimiento    { --acc-bg: #f5ebe0; --acc-tx: #8a4b16; }
+.av-accion-ingreso_lote          { --acc-bg: #ecf7d9; --acc-tx: #4d7c0f; }
+.av-accion-descarga_pdf          { --acc-bg: #dff3fa; --acc-tx: #0e7490; }
+.av-accion-asignacion_perfil     { --acc-bg: #ede7fe; --acc-tx: #6d28d9; }
+.av-accion-asignacion_permisos   { --acc-bg: #e5e7fd; --acc-tx: #4338ca; }
+.av-accion-atencion_alerta       { --acc-bg: #fef9c3; --acc-tx: #854d0e; }
+.av-accion-atencion_notificacion { --acc-bg: #e0f2fe; --acc-tx: #0369a1; }
+.av-accion-baja                  { --acc-bg: #f9e0e0; --acc-tx: #7f1d1d; }
+.av-accion-activacion            { --acc-bg: #d1fae5; --acc-tx: #047857; }
+.av-accion-reset_contrasena      { --acc-bg: #fae8ff; --acc-tx: #a21caf; }
+.av-accion-envio_recuperacion    { --acc-bg: #ece9e6; --acc-tx: #57534e; }
+.av-accion-recupera_contrasena   { --acc-bg: #f3e8ff; --acc-tx: #7e22ce; }
+
+html.modo-oscuro .av-accion                       { --acc-bg: #223029; --acc-tx: #a4b6ab; }
+html.modo-oscuro .av-accion-creacion              { --acc-bg: #12301f; --acc-tx: #6ee7a1; }
+html.modo-oscuro .av-accion-modificacion          { --acc-bg: #14233f; --acc-tx: #93b4fb; }
+html.modo-oscuro .av-accion-eliminacion           { --acc-bg: #381616; --acc-tx: #f87171; }
+html.modo-oscuro .av-accion-anulacion             { --acc-bg: #3a1426; --acc-tx: #f472b6; }
+html.modo-oscuro .av-accion-inicio_sesion         { --acc-bg: #0f2e2c; --acc-tx: #5eead4; }
+html.modo-oscuro .av-accion-cierre_sesion         { --acc-bg: #232a33; --acc-tx: #cbd5e1; }
+html.modo-oscuro .av-accion-bloqueo_inactividad   { --acc-bg: #3a2d0f; --acc-tx: #fbbf24; }
+html.modo-oscuro .av-accion-egreso_stock          { --acc-bg: #3a1f0c; --acc-tx: #fb923c; }
+html.modo-oscuro .av-accion-egreso_vencimiento    { --acc-bg: #33231a; --acc-tx: #e0a878; }
+html.modo-oscuro .av-accion-ingreso_lote          { --acc-bg: #1f2d0e; --acc-tx: #a3e635; }
+html.modo-oscuro .av-accion-descarga_pdf          { --acc-bg: #0e2a33; --acc-tx: #67e8f9; }
+html.modo-oscuro .av-accion-asignacion_perfil     { --acc-bg: #261a40; --acc-tx: #c4b5fd; }
+html.modo-oscuro .av-accion-asignacion_permisos   { --acc-bg: #1c1d42; --acc-tx: #a5b4fc; }
+html.modo-oscuro .av-accion-atencion_alerta       { --acc-bg: #33300c; --acc-tx: #fde047; }
+html.modo-oscuro .av-accion-atencion_notificacion { --acc-bg: #0c2537; --acc-tx: #7dd3fc; }
+html.modo-oscuro .av-accion-baja                  { --acc-bg: #2e1212; --acc-tx: #fca5a5; }
+html.modo-oscuro .av-accion-activacion            { --acc-bg: #0b2e22; --acc-tx: #34d399; }
+html.modo-oscuro .av-accion-reset_contrasena      { --acc-bg: #33133a; --acc-tx: #f0abfc; }
+html.modo-oscuro .av-accion-envio_recuperacion    { --acc-bg: #2a2725; --acc-tx: #d6d3d1; }
+html.modo-oscuro .av-accion-recupera_contrasena   { --acc-bg: #2a1640; --acc-tx: #d8b4fe; }

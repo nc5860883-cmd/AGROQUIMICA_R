@@ -43,12 +43,14 @@ const ACCIONES = {
 const textoAccion = (a = '') => ACCIONES[a]
   || a.replaceAll('_', ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase())
 
-// Color de la etiqueta según la acción (rojo: borrar/baja, verde: crear, azul: modificar)
-function colorAccion(a = '') {
-  if (a.includes('ELIMIN') || a.includes('BAJA') || a.includes('ANUL')) return 'danger'
-  if (a.includes('CREA') || a.includes('ACTIV')) return 'success'
-  if (a.includes('MODIF') || a.includes('CAMBIO')) return 'primary'
-  return 'secondary'
+// Etiqueta de la acción: cada acción tiene su propio color
+// (clases av-accion-* en Moderno.css, con su versión para modo oscuro).
+function EtiquetaAccion({ accion = '' }) {
+  return (
+    <span className={`badge rounded-pill av-accion av-accion-${accion.toLowerCase()}`}>
+      {textoAccion(accion)}
+    </span>
+  )
 }
 
 // Valor legible para mostrar en la tabla de cambios.
@@ -123,7 +125,7 @@ function Auditoria() {
         <div className="table-responsive">
           <table className="table table-hover align-middle av-filas mb-0">
             <thead>
-              <tr><th>Fecha y hora</th><th>Usuario</th><th>Perfil</th><th>Sección</th><th>Registro</th><th>Acción</th><th>Detalle</th></tr>
+              <tr><th>Fecha y hora</th><th>Usuario</th><th>Perfil</th><th>Sección</th><th>Registro</th><th>Acción</th><th className="text-center">Detalle</th></tr>
             </thead>
             <tbody>
               {registros.map((r) => (
@@ -133,8 +135,8 @@ function Auditoria() {
                   <td>{r.ID_Usuario?.ID_Perfil?.Nombre_perfil || '—'}</td>
                   <td>{r.Seccion}</td>
                   <td>{r.nombre_registro || `#${r.ID_Registro}`}</td>
-                  <td><span className={`badge rounded-pill text-bg-${colorAccion(r.Accion)}`}>{textoAccion(r.Accion)}</span></td>
-                  <td>
+                  <td><EtiquetaAccion accion={r.Accion} /></td>
+                  <td className="text-center">
                     <button type="button" className="btn btn-outline-secondary av-btn-ico" title="Ver detalle" onClick={() => verDetalle(r.ID_Log)}>
                       <Icono nombre="ver" />
                     </button>
@@ -166,7 +168,7 @@ function Auditoria() {
               <dt className="col-sm-3">Usuario</dt><dd className="col-sm-9">{detalle.usuario} ({detalle.perfil})</dd>
               <dt className="col-sm-3">Sección</dt><dd className="col-sm-9">{detalle.entidad}</dd>
               <dt className="col-sm-3">Registro</dt><dd className="col-sm-9">{detalle.nombre_registro || `#${detalle.registro}`}</dd>
-              <dt className="col-sm-3">Acción</dt><dd className="col-sm-9">{textoAccion(detalle.accion)}</dd>
+              <dt className="col-sm-3">Acción</dt><dd className="col-sm-9"><EtiquetaAccion accion={detalle.accion} /></dd>
             </dl>
 
             {(detalle.cambios || []).length > 0 ? (
