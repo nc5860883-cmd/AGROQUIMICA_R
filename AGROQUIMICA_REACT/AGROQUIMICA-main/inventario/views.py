@@ -3982,6 +3982,29 @@ def clave_fecha_alerta(item):
 # HISTORIAL DE ALERTAS
 # ============================================================
 
+def _lote_que_genero_alerta(item):
+    """Lote del movimiento de stock que provocó una alerta de stock mínimo.
+
+    La alerta se crea en el mismo momento que el egreso, así que se busca
+    el último movimiento del producto hecho como mucho un minuto antes.
+    Si no hay (por ejemplo, la alerta salió por cambiar el stock mínimo),
+    devuelve None.
+    """
+    producto = item['producto']
+    momento = item['fecha']
+
+    if producto is None or momento is None:
+        return None
+
+    movimiento = MovimientosStock.objects.select_related('ID_Lote').filter(
+        ID_Lote__ID_Producto=producto,
+        Fecha_hora_movimiento__lte=momento + timedelta(seconds=5),
+        Fecha_hora_movimiento__gte=momento - timedelta(minutes=1),
+    ).order_by('-Fecha_hora_movimiento').first()
+
+    return movimiento.ID_Lote if movimiento else None
+
+
 def gestion_alertas(request):
     usuario = usuario_con_acceso(request, 'alertas')
 
@@ -4067,6 +4090,9 @@ def gestion_alertas(request):
             'fecha': alerta.Fecha_hora_historial_alerta,
             'cantidad': alerta.Cantidad_al_generar,
             'stock_minimo': alerta.Stock_minimo_al_generar,
+            # Stock del producto hoy (no al generarse la alerta).
+            'stock_actual': alerta.ID_Stock.Cantidad_stock,
+            'stock_minimo_actual': alerta.ID_Stock.Stock_minimo,
             'atendida': alerta.Atendida,
             'usuario': alerta.ID_Usuario,
             'fecha_atencion': alerta.Fecha_hora_atencion,
@@ -4088,6 +4114,13 @@ def gestion_alertas(request):
         usuarios = Usuarios.objects.filter(ID_Usuario=usuario.ID_Usuario)
 
     pagina = paginar(request, alertas)
+
+    # Las alertas de stock no guardan lote: se muestra el lote del
+    # movimiento que la provocó (el egreso hecho justo antes de la alerta).
+    # Solo se busca para las alertas de la página que se muestra.
+    for item in pagina:
+        if item['tipo'] == TIPO_STOCK and item['lote'] is None:
+            item['lote'] = _lote_que_genero_alerta(item)
 
     pendientes = visibles.filter(Atendida=False)
 

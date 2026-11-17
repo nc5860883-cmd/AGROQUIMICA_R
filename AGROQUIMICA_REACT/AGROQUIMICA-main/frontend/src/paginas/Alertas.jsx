@@ -10,7 +10,7 @@ import { usePantalla } from '../hooks/usePantalla'
 import Resumen from '../componentes/Resumen'
 import Paginacion from '../componentes/Paginacion'
 import { Encabezado, EstadoPantalla, Icono } from '../componentes/Comunes'
-import { fecha } from '../servicios/formato'
+import { fecha, numero } from '../servicios/formato'
 
 // Valores iniciales de los filtros (sin filtrar, página 1)
 const FILTROS_VACIOS = { tipo: '', producto: '', usuario: '', fecha_desde: '', fecha_hasta: '', page: 1, por_pagina: '' }
@@ -87,8 +87,8 @@ function Alertas() {
           <table className="table table-hover align-middle av-filas mb-0">
             <thead>
               <tr>
-                <th>Tipo</th><th>Producto</th><th>Lote</th><th>Mensaje</th><th>Cantidad</th>
-                <th>Stock mínimo</th><th>Estado</th><th>Atendida por</th>
+                <th>Tipo</th><th>Producto</th><th>Lote</th><th>Mensaje</th><th>Stock actual</th>
+                <th>Estado</th><th>Atendida por</th>
               </tr>
             </thead>
             <tbody>
@@ -98,11 +98,27 @@ function Alertas() {
                     <span className={`badge rounded-pill ${a.tipo === 'Vencimiento' ? 'text-bg-warning' : 'text-bg-danger'}`}>{a.tipo}</span>
                     <div className="small text-body-secondary">{fecha(a.fecha, true)}</div>
                   </td>
-                  <td>{a.producto?.Nombre_producto || '—'}</td>
-                  <td>{a.lote?.Numero_lote || '—'}</td>
+                  <td className="fw-semibold">{a.producto?.Nombre_producto || '—'}</td>
+                  {/* Vencimiento: el lote que vence. Stock mínimo: el lote del egreso que la provocó. */}
+                  <td className="text-nowrap">
+                    {a.lote ? (
+                      <span className="al-lote">
+                        <strong>{a.lote.Numero_lote}</strong>
+                        {a.lote.Fecha_vencimiento && <span>Vence {fecha(a.lote.Fecha_vencimiento)}</span>}
+                      </span>
+                    ) : <span className="text-body-secondary">—</span>}
+                  </td>
                   <td className="small">{a.mensaje}</td>
-                  <td>{a.cantidad ?? '—'}</td>
-                  <td>{a.stock_minimo ?? '—'}</td>
+                  <td className="text-nowrap">
+                    {a.stock_actual === undefined || a.stock_actual === null ? '—' : (
+                      <>
+                        <span className={`al-stock${a.stock_actual <= a.stock_minimo_actual ? ' bajo' : ''}`}>
+                          {numero(a.stock_actual)} un.
+                        </span>
+                        <div className="small text-body-secondary">Mínimo: {numero(a.stock_minimo_actual)}</div>
+                      </>
+                    )}
+                  </td>
                   <td>
                     {a.atendida ? (
                       <span className="badge rounded-pill text-bg-success">Atendida</span>
@@ -121,7 +137,7 @@ function Alertas() {
                 </tr>
               ))}
               {alertas.length === 0 && (
-                <tr><td colSpan={8} className="av-vacio">No hay alertas para mostrar.</td></tr>
+                <tr><td colSpan={7} className="av-vacio">No hay alertas para mostrar.</td></tr>
               )}
             </tbody>
           </table>
