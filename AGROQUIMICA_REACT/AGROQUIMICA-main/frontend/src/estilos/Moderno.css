@@ -256,6 +256,16 @@ html.modo-oscuro {
 
 .bs-pantalla .av-btn-ico:disabled { opacity: .35; }
 
+/* Modo oscuro: tema.css pinta todos los .btn de gris con !important;
+   los botones de ícono de color (rojo, verde, ámbar) recuperan su color. */
+html.modo-oscuro .bs-pantalla .av-btn-ico.btn-outline-danger  { background: #381616 !important; color: #f87171 !important; border-color: #5c2424 !important; }
+html.modo-oscuro .bs-pantalla .av-btn-ico.btn-outline-success { background: #12301f !important; color: #6ee7a1 !important; border-color: #1f4a31 !important; }
+html.modo-oscuro .bs-pantalla .av-btn-ico.btn-outline-warning { background: #3a2d0f !important; color: #fbbf24 !important; border-color: #5a4515 !important; }
+
+html.modo-oscuro .bs-pantalla .av-btn-ico.btn-outline-danger:hover:not(:disabled)  { background: #dc2626 !important; color: #fff !important; border-color: #dc2626 !important; }
+html.modo-oscuro .bs-pantalla .av-btn-ico.btn-outline-success:hover:not(:disabled) { background: #1f8a52 !important; color: #fff !important; border-color: #1f8a52 !important; }
+html.modo-oscuro .bs-pantalla .av-btn-ico.btn-outline-warning:hover:not(:disabled) { background: #d97706 !important; color: #fff !important; border-color: #d97706 !important; }
+
 /* ============================================================
    3. CAMPOS DE FORMULARIO
    (se recupera el ancho completo que quitaba bootstrap_ajustes.css)

@@ -108,8 +108,8 @@ function Movimientos() {
               <tr>
                 <th>Fecha y hora</th><th>Producto</th><th>Lote</th><th>Tipo</th><th>Cantidad</th>
                 <th>Usuario</th><th>Observaciones</th>
-                {perm.comprobantes_gestionar && <th>Comprobante</th>}
-                {datos.puede_anular && <th>Acciones</th>}
+                {perm.comprobantes_gestionar && <th className="text-center">Comprobante</th>}
+                {datos.puede_anular && <th className="text-center">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -135,7 +135,7 @@ function Movimientos() {
                       )}
                     </td>
                     {perm.comprobantes_gestionar && (
-                      <td>
+                      <td className="text-center">
                         <a className="btn btn-outline-secondary av-btn-ico" title="Descargar comprobante"
                           href={urlArchivo(`movimientos-stock/${m.ID_Movimiento_stock}/comprobante/`)} target="_blank" rel="noreferrer">
                           <Icono nombre="pdf" />
@@ -143,7 +143,7 @@ function Movimientos() {
                       </td>
                     )}
                     {datos.puede_anular && (
-                      <td>
+                      <td className="text-center">
                         {tipo === 'Egreso por venta' && !m.Anulado && (
                           <button type="button" className="btn btn-outline-danger av-btn-ico" title="Anular egreso" onClick={() => setAnular(m)}>
                             <Icono nombre="anular" />
