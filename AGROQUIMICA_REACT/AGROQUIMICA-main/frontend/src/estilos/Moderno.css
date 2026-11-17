@@ -1893,3 +1893,57 @@ html.modo-oscuro .egr {
 
 html.modo-oscuro .bs-pantalla .al-lote { color: #fbbf24; background: #3a2d0f; }
 html.modo-oscuro .bs-pantalla .al-stock.bajo { color: #f87171; }
+
+/* ============================================================
+   CAMPOS NO EDITABLES (ej. Usuario, DNI, Perfil y Estado en Mi perfil)
+   Están deshabilitados: no se pueden clickear, enfocar ni seleccionar.
+   Se ven apagados, con borde punteado y un candado.
+   En modo oscuro, tema.css pinta todos los input con una regla muy
+   específica y !important; por eso estas reglas repiten clases
+   (.form-control.form-control) para ganarle sin tocar tema.css.
+   ============================================================ */
+.av-campo-fijo {
+  position: relative;
+  cursor: not-allowed;
+}
+
+.bs-pantalla .av-campo-fijo .form-control.form-control:disabled {
+  padding-right: 2.6rem;
+  background-color: #eef2ef !important;
+  color: #6b7f73 !important;
+  border: 1.5px dashed #cbd8cf !important;
+  box-shadow: none !important;
+  opacity: 1;
+  cursor: not-allowed;
+  user-select: none;
+  pointer-events: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.av-campo-fijo-candado {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: #8fa397;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.av-campo-fijo-nota {
+  font-size: .8rem;
+  color: var(--m-suave);
+}
+
+html.modo-oscuro .bs-pantalla .av-campo-fijo .form-control.form-control.form-control:disabled:disabled {
+  background-color: #0f1813 !important;
+  color: #7f9488 !important;
+  border: 1.5px dashed #2f4237 !important;
+}
+
+html.modo-oscuro .av-campo-fijo-candado { stroke: #5f7668; }

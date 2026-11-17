@@ -75,6 +75,9 @@ function Layout() {
   // Ejecuta una acción en Django y muestra sus mensajes. Devuelve true si salió bien.
   const ejecutar = useCallback(async (ruta, datos) => {
     const r = await ejecutarAccion(ruta, datos)
+    // Una acción puede crear o leer notificaciones (ej. un egreso que deja
+    // el stock bajo el mínimo): la campana se actualiza enseguida.
+    if (r.ok) window.dispatchEvent(new CustomEvent('av:notificaciones'))
     if (r.mensajes?.length) {
       notificar(r.mensajes)
     } else if (!r.ok) {

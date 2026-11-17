@@ -4,7 +4,7 @@
 // Permite filtrarlas y marcarlas como atendidas.
 // ============================================================
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { usePantalla } from '../hooks/usePantalla'
 import Resumen from '../componentes/Resumen'
@@ -24,7 +24,15 @@ function Alertas() {
   // Cambia un filtro y vuelve a la página 1
   const filtrar = (campo, valor) => setFiltros((f) => ({ ...f, [campo]: valor, page: 1 }))
 
-  // Marca una alerta como atendida
+  // Si se atiende un aviso desde la campanita, la tabla se actualiza
+  // (atender la notificación también atiende la alerta).
+  useEffect(() => {
+    window.addEventListener('av:bandeja-cambio', recargar)
+    return () => window.removeEventListener('av:bandeja-cambio', recargar)
+  }, [recargar])
+
+  // Marca una alerta como atendida (también cierra sus notificaciones;
+  // la campanita se actualiza sola: ejecutar() avisa con "av:notificaciones")
   const atender = async (alerta) => {
     const r = await ejecutar(`alertas/atender/${alerta.id}/`)
     if (r.ok) recargar()

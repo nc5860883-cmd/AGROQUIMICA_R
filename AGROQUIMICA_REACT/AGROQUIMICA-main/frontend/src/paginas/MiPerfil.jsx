@@ -95,12 +95,23 @@ function DatosPersonales({ usuario, limites, onGuardado }) {
               {...register('Email_usuario', reglaEmail())} />
             <ErrorCampo error={errors.Email_usuario} />
           </div>
+          {/* Datos que el usuario no puede cambiar: bloqueados (no se pueden
+              clickear ni seleccionar) y con un candado, en modo claro y oscuro */}
           {[['Usuario', usuario.usuario], ['DNI', usuario.dni], ['Perfil', usuario.perfil], ['Estado', usuario.estado]].map(([e, v]) => (
             <div className="col-md-6" key={e}>
               <label className="form-label">{e}</label>
-              <input className="form-control" value={v ?? ''} readOnly />
+              <div className="av-campo-fijo" title="Este dato no se puede modificar">
+                <input className="form-control" value={v ?? ''} disabled aria-readonly="true" tabIndex={-1} />
+                <svg className="av-campo-fijo-candado" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              </div>
             </div>
           ))}
+          <p className="col-12 av-campo-fijo-nota mb-0">
+            Usuario, DNI, perfil y estado solo los puede modificar un administrador.
+          </p>
         </div>
       </div>
       <div className="card-footer bg-body text-end">

@@ -23,6 +23,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .alertas import TIPO_VENCIMIENTO, revisar_stock
+from .notificaciones import cerrar_notificaciones
 from .auditoria import registrar_auditoria, snapshot
 from .models import (
     Alertas,
@@ -231,6 +232,10 @@ def baja_lote_vencido(request, id_lote):
                     alerta_antes,
                     snapshot(alerta)
                 )
+
+            # Cerrar también las notificaciones de ese lote
+            # (campanita y pantalla Notificaciones de todos los perfiles).
+            cerrar_notificaciones(f'vencimiento:lote:{lote.ID_Lote}')
 
             # Revisar stock mínimo y generar alerta
             # si corresponde.

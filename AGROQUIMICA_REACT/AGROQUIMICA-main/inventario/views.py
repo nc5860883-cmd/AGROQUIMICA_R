@@ -48,7 +48,7 @@ from .alertas import (
     revisar_egreso_inusual,
     revisar_vencimientos as generar_alertas_vencimiento,
 )
-from .notificaciones import config
+from .notificaciones import atender_alerta_sincronizada, cerrar_notificaciones, config
 from .auditoria import (
     snapshot, registrar_auditoria, accion_por_estado,
     registrar_asignacion_perfil, registrar_asignacion_permisos,
@@ -3842,6 +3842,8 @@ def baja_lote_vencido(request, id_lote):
         ID_Usuario=usuario,
         Fecha_hora_atencion=timezone.now(),
     )
+    # ...y sus notificaciones también (campanita y pantalla Notificaciones).
+    cerrar_notificaciones(f'vencimiento:lote:{lote.ID_Lote}')
 
     # Si el producto quedó en su stock mínimo, se genera esa alerta.
     revisar_stock(stock, usuario)
@@ -4188,25 +4190,10 @@ def atender_alerta(request, id_alerta):
         ID_Historial_alerta=id_alerta
     )
 
-    if not alerta.Atendida:
-        antes = snapshot(alerta)
-        alerta.Atendida = True
-        alerta.ID_Usuario = usuario
-        alerta.Fecha_hora_atencion = timezone.now()
-
-        alerta.save(update_fields=[
-            'Atendida',
-            'ID_Usuario',
-            'Fecha_hora_atencion',
-        ])
-        registrar_auditoria(
-            usuario,
-            'Historial de alertas',
-            alerta,
-            'ATENCION_ALERTA',
-            antes,
-            snapshot(alerta)
-        )
+    # Atiende la alerta (con auditoría) y cierra sus notificaciones en la
+    # campanita y en la pantalla Notificaciones de todos los perfiles:
+    # el mismo aviso no se atiende dos veces.
+    atender_alerta_sincronizada(usuario, alerta)
 
     if es_ajax:
         return JsonResponse({

@@ -4,7 +4,7 @@
 // stock mínimo, egresos inusuales), con filtros y paginación.
 // ============================================================
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { usePantalla } from '../hooks/usePantalla'
 import Paginacion from '../componentes/Paginacion'
@@ -19,22 +19,23 @@ function Notificaciones() {
   const [filtros, setFiltros] = useState({ estado: '', tipo: '', page: 1, por_pagina: '' })
   const { datos, cargando, error, recargar } = usePantalla('notificaciones/', filtros)
 
+  // Si se marcan notificaciones desde la campana, la lista se actualiza
+  useEffect(() => {
+    window.addEventListener('av:bandeja-cambio', recargar)
+    return () => window.removeEventListener('av:bandeja-cambio', recargar)
+  }, [recargar])
+
   // Marca una notificación como leída
+  // (la campana se actualiza sola: ejecutar() avisa con "av:notificaciones")
   const leer = async (n) => {
     const r = await ejecutar(`notificaciones/${n.ID_Notificacion}/leer/`)
-    if (r.ok) {
-      recargar()
-      window.dispatchEvent(new CustomEvent('av:notificaciones'))
-    }
+    if (r.ok) recargar()
   }
 
   // Marca todas las notificaciones como leídas
   const leerTodas = async () => {
     const r = await ejecutar('notificaciones/leer-todas/')
-    if (r.ok) {
-      recargar()
-      window.dispatchEvent(new CustomEvent('av:notificaciones'))
-    }
+    if (r.ok) recargar()
   }
 
   // Mientras cargan los datos (o si hay error) se muestra el estado de carga
