@@ -124,7 +124,7 @@ function Lotes() {
                     <td className="fw-semibold text-nowrap">{l.Numero_lote}</td>
                     <td>{l.ID_Producto?.Nombre_producto}</td>
                     <td>{l.ID_Remito?.ID_Proveedor?.nombre_proveedor || 'Sin atribuir'}</td>
-                    <td>{l.ID_Remito?.Numero_remito || '—'}</td>
+                    <td className="text-nowrap">{l.ID_Remito?.Numero_remito || '—'}</td>
                     <td className="text-nowrap">{fecha(l.Fecha_ingreso)}</td>
                     <td className="text-nowrap">{fecha(l.Fecha_vencimiento)}</td>
                     <td>{l.Cantidad_ingresada}</td>

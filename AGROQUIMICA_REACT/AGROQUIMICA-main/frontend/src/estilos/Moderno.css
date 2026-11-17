@@ -1182,3 +1182,32 @@ html.modo-oscuro .av-accion-activacion            { --acc-bg: #0b2e22; --acc-tx:
 html.modo-oscuro .av-accion-reset_contrasena      { --acc-bg: #33133a; --acc-tx: #f0abfc; }
 html.modo-oscuro .av-accion-envio_recuperacion    { --acc-bg: #2a2725; --acc-tx: #d6d3d1; }
 html.modo-oscuro .av-accion-recupera_contrasena   { --acc-bg: #2a1640; --acc-tx: #d8b4fe; }
+
+/* ============================================================
+   BOTONES CON ASPECTO DE ENLACE (.btn-link) EN MODO OSCURO
+   tema.css les pone fondo y borde a todos los .btn, y al hacer
+   clic aparecía un recuadro redondeado alrededor del texto.
+   Se dejan como un enlace simple; el contorno queda solo para
+   quien navega con el teclado (:focus-visible).
+   ============================================================ */
+html.modo-oscuro .btn.btn-link,
+html.modo-oscuro .btn.btn-link:hover,
+html.modo-oscuro .btn.btn-link:focus,
+html.modo-oscuro .btn.btn-link:active {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--d-green-tx) !important;
+  min-height: 0;
+}
+
+/* Los enlaces rojos (ej. "Quitar foto") siguen siendo rojos */
+html.modo-oscuro .btn.btn-link.text-danger { color: #f87171 !important; }
+
+html.modo-oscuro .btn.btn-link:hover { text-decoration: underline; }
+
+html.modo-oscuro .btn.btn-link:focus-visible {
+  outline: 2px solid var(--d-green-tx);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
