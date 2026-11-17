@@ -14,6 +14,7 @@ import Iconos from './Iconos'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import Mensajes from './Mensajes'
+import ConfirmarSalida from './ConfirmarSalida'
 import '../estilos/Sistema.css'
 import '../estilos/Mensajes.css'
 import '../estilos/Moderno.css'
@@ -40,6 +41,7 @@ function Layout() {
   const [sesion, setSesion] = useState(null)
   const [menuOculto, setMenuOculto] = useState(false)
   const [mensajes, setMensajes] = useState([])
+  const [confirmarSalida, setConfirmarSalida] = useState(false)
   const contador = useRef(0)
 
   // Al montar: pide el usuario, el menú y los permisos.
@@ -114,7 +116,7 @@ function Layout() {
         menu={sesion.menu}
         oculto={menuOculto}
         rutaActiva={itemMenu?.url}
-        onCerrarSesion={salir}
+        onCerrarSesion={() => setConfirmarSalida(true)}
       />
 
       <div className="page-area">
@@ -132,6 +134,13 @@ function Layout() {
 
             {/* Mensajes emergentes (esquina de la pantalla) */}
       <Mensajes lista={mensajes} onCerrar={cerrarMensaje} />
+
+      {/* Cartel "¿Desea cerrar la sesión?" */}
+      <ConfirmarSalida
+        abierto={confirmarSalida}
+        onCancelar={() => setConfirmarSalida(false)}
+        onConfirmar={salir}
+      />
     </div>
   )
 }
