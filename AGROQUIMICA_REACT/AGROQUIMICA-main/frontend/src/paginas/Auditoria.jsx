@@ -9,7 +9,7 @@ import { usePantalla } from '../hooks/usePantalla'
 import { obtenerPantalla } from '../servicios/api'
 import Resumen from '../componentes/Resumen'
 import Paginacion from '../componentes/Paginacion'
-import Modal from '../componentes/Modal'
+import DetalleAuditoria from '../componentes/DetalleAuditoria'
 import { Encabezado, EstadoPantalla, Icono } from '../componentes/Comunes'
 import { fecha } from '../servicios/formato'
 
@@ -53,8 +53,6 @@ function EtiquetaAccion({ accion = '' }) {
   )
 }
 
-// Valor legible para mostrar en la tabla de cambios.
-const mostrar = (v) => (v === null || v === undefined || v === '' ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v))
 
 function Auditoria() {
   // Filtros, datos de Django y registro abierto en el detalle
@@ -158,56 +156,7 @@ function Auditoria() {
       </section>
 
       {/* Ventana con el detalle del registro (datos antes y después del cambio) */}
-      <Modal abierto={Boolean(detalle)} titulo="Detalle del registro" icono="auditoria" onCerrar={() => setDetalle(null)} tamano="modal-lg">
-        {detalle?.cargando && <p className="text-center my-3">Cargando…</p>}
-        {detalle?.error && <div className="alert alert-danger">{detalle.error}</div>}
-        {detalle && !detalle.cargando && !detalle.error && (
-          <>
-            <dl className="row small">
-              <dt className="col-sm-3">Fecha</dt><dd className="col-sm-9">{detalle.fecha} {detalle.hora}</dd>
-              <dt className="col-sm-3">Usuario</dt><dd className="col-sm-9">{detalle.usuario} ({detalle.perfil})</dd>
-              <dt className="col-sm-3">Sección</dt><dd className="col-sm-9">{detalle.entidad}</dd>
-              <dt className="col-sm-3">Registro</dt><dd className="col-sm-9">{detalle.nombre_registro || `#${detalle.registro}`}</dd>
-              <dt className="col-sm-3">Acción</dt><dd className="col-sm-9"><EtiquetaAccion accion={detalle.accion} /></dd>
-            </dl>
-
-            {(detalle.cambios || []).length > 0 ? (
-              <table className="table table-sm">
-                <thead><tr><th>Campo</th><th>Antes</th><th>Después</th></tr></thead>
-                <tbody>
-                  {detalle.cambios.map((c, i) => (
-                    <tr key={c.campo || i}>
-                      <td className="fw-semibold">{c.campo || c.etiqueta}</td>
-                      <td className="text-danger">{mostrar(c.antes)}</td>
-                      <td className="text-success">{mostrar(c.despues)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (detalle.datos || []).length > 0 ? (
-              <table className="table table-sm">
-                <tbody>
-                  {detalle.datos.map((d, i) => (
-                    <tr key={d.campo || i}><td className="fw-semibold">{d.campo || d.etiqueta}</td><td>{mostrar(d.valor)}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <table className="table table-sm">
-                <tbody>
-                  {Object.entries({ ...detalle.anteriores, ...detalle.actuales }).map(([k]) => (
-                    <tr key={k}>
-                      <td className="fw-semibold">{k}</td>
-                      <td>{mostrar(detalle.anteriores?.[k])}</td>
-                      <td>{mostrar(detalle.actuales?.[k])}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </>
-        )}
-      </Modal>
+      <DetalleAuditoria detalle={detalle} textoAccion={textoAccion} onCerrar={() => setDetalle(null)} />
     </div>
   )
 }

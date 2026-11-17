@@ -1211,3 +1211,348 @@ html.modo-oscuro .btn.btn-link:focus-visible {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ============================================================
+   AUDITORÍA: VENTANA "DETALLE DEL REGISTRO" (clases ad-*)
+   Usa las variables --m-* (cambian solas en modo oscuro) y el
+   color de la acción (--acc-bg / --acc-tx de av-accion-*).
+   ============================================================ */
+.ad {
+  --ad-rojo-bg: #fdf0f0;
+  --ad-rojo-bd: #f6d5d5;
+  --ad-rojo-tx: #9f1d1d;
+  --ad-verde-bg: #eaf7ef;
+  --ad-verde-bd: #cfe9da;
+  --ad-verde-tx: #136237;
+  --ad-panel: #f7faf8;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--m-texto);
+}
+
+html.modo-oscuro .ad {
+  --ad-rojo-bg: #2a1515;
+  --ad-rojo-bd: #4a2222;
+  --ad-rojo-tx: #fca5a5;
+  --ad-verde-bg: #11291b;
+  --ad-verde-bd: #1f4630;
+  --ad-verde-tx: #86efac;
+  --ad-panel: #1a2620;
+}
+
+.ad-cargando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 0;
+  color: var(--m-suave);
+}
+
+/* --- Cabecera con el color de la acción --- */
+.ad-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 20px 18px 24px;
+  border-radius: var(--m-radio);
+  background: linear-gradient(135deg, var(--acc-bg), color-mix(in srgb, var(--acc-bg) 35%, var(--m-tarjeta)));
+  border: 1px solid color-mix(in srgb, var(--acc-tx) 20%, transparent);
+  overflow: hidden;
+}
+
+.ad-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--acc-tx);
+}
+
+.ad-hero .badge.av-accion {
+  background: var(--m-tarjeta) !important;
+  font-size: .76rem;
+}
+
+.ad-hero-titulo {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--m-texto);
+  word-break: break-word;
+}
+
+.ad-hero-sub {
+  font-size: .85rem;
+  color: var(--m-suave);
+}
+
+/* --- Tarjetas: fecha, usuario, registro --- */
+.ad-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ad-meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  background: var(--m-tarjeta);
+  min-width: 0;
+}
+
+.ad-meta-item > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ad-meta-icono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--ad-verde-bg);
+  color: var(--ad-verde-tx);
+}
+
+.ad-meta-icono .av-ico { width: 18px; height: 18px; }
+
+.ad-meta-rotulo,
+.ad-valor-rotulo {
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--m-suave);
+}
+
+.ad-meta-item strong {
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--m-texto);
+  overflow-wrap: anywhere;
+}
+
+.ad-meta-extra {
+  font-size: .8rem;
+  color: var(--m-suave);
+  overflow-wrap: anywhere;
+}
+
+/* --- Secciones --- */
+.ad-seccion-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--m-suave);
+}
+
+.ad-contador {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ad-panel);
+  border: 1px solid var(--m-borde);
+  font-size: .72rem;
+  color: var(--m-texto);
+  letter-spacing: 0;
+}
+
+/* --- Cambios: antes → después --- */
+.ad-cambios {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ad-cambio {
+  padding: 12px 14px;
+  border: 1px solid var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  background: var(--m-tarjeta);
+}
+
+.ad-cambio-campo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--m-texto);
+}
+
+.ad-dif {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.ad-dif.sube { background: var(--ad-verde-bg); color: var(--ad-verde-tx); }
+.ad-dif.baja { background: var(--ad-rojo-bg);  color: var(--ad-rojo-tx); }
+
+.ad-cambio-valores {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+}
+
+.ad-valor {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid;
+  min-width: 0;
+}
+
+.ad-antes   { background: var(--ad-rojo-bg);  border-color: var(--ad-rojo-bd); }
+.ad-despues { background: var(--ad-verde-bg); border-color: var(--ad-verde-bd); }
+
+.ad-antes .ad-texto   { color: var(--ad-rojo-tx);  text-decoration: line-through; text-decoration-thickness: 1px; }
+.ad-despues .ad-texto { color: var(--ad-verde-tx); font-weight: 600; }
+
+.ad-antes .ad-valor-rotulo   { color: var(--ad-rojo-tx);  opacity: .75; }
+.ad-despues .ad-valor-rotulo { color: var(--ad-verde-tx); opacity: .75; }
+
+.ad-flecha {
+  display: grid;
+  place-items: center;
+  color: var(--m-suave);
+}
+
+.ad-flecha svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* --- Datos registrados --- */
+.ad-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  background: var(--m-borde);
+  overflow: hidden;
+}
+
+.ad-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 14px;
+  background: var(--m-tarjeta);
+  min-width: 0;
+}
+
+.ad-dato.ancho { grid-column: 1 / -1; }
+
+.ad-dato dt {
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--m-suave);
+}
+
+.ad-dato dd {
+  margin: 0;
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--m-texto);
+  overflow-wrap: anywhere;
+}
+
+/* Si la cantidad de datos es impar, el último ocupa todo el ancho */
+.ad-dato:not(.ancho):last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+.ad-vacio {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--m-suave);
+}
+
+.ad-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.ad-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 500;
+  background: var(--ad-panel);
+  border: 1px solid var(--m-borde);
+  color: var(--m-texto);
+  text-decoration: none;
+}
+
+/* --- Sin datos (inicio / cierre de sesión) --- */
+.ad-sin-datos {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px dashed var(--m-borde);
+  border-radius: var(--m-radio-chico);
+  background: var(--ad-panel);
+}
+
+.ad-sin-datos p {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--m-suave);
+}
+
+.ad-sin-datos-icono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--m-tarjeta);
+  border: 1px solid var(--m-borde);
+  color: var(--m-suave);
+}
+
+.ad-sin-datos-icono .av-ico { width: 18px; height: 18px; }
+
+/* --- Pantallas angostas --- */
+@media (max-width: 640px) {
+  .ad-meta { grid-template-columns: 1fr; }
+  .ad-datos { grid-template-columns: 1fr; }
+  .ad-cambio-valores { grid-template-columns: 1fr; }
+  .ad-flecha { transform: rotate(90deg); }
+}
