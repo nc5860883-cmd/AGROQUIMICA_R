@@ -1054,3 +1054,53 @@ html.modo-oscuro .av-detalle-fila > td { background: #111a15 !important; }
 /* Fechas, números de lote y remito en una sola línea */
 .bs-pantalla .table td:first-child { white-space: nowrap; }
 .bs-pantalla .table .badge { white-space: nowrap; }
+
+/* ============================================================
+   BOTÓN "REGISTRAR EGRESO" (rojo)
+   Se usa en el encabezado de Productos y en el modal de egreso.
+   En modo oscuro tema.css pinta todos los .btn de gris con
+   !important, por eso aquí también se usa !important.
+   ============================================================ */
+.btn.av-btn-egreso {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  border: 1px solid #dc2626;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, .25);
+}
+
+.btn.av-btn-egreso:hover:not(:disabled),
+.btn.av-btn-egreso:focus-visible {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+.btn.av-btn-egreso:focus-visible {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, .35);
+}
+
+.btn.av-btn-egreso:disabled {
+  background: #e5a3a3;
+  border-color: #e5a3a3;
+  color: #fff;
+  box-shadow: none;
+}
+
+html.modo-oscuro .btn.av-btn-egreso {
+  background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
+  border: 1px solid #b91c1c !important;
+  color: #fff !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
+}
+
+html.modo-oscuro .btn.av-btn-egreso:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+  border-color: #dc2626 !important;
+}
+
+html.modo-oscuro .btn.av-btn-egreso:disabled {
+  background: #4a2323 !important;
+  border-color: #5c2a2a !important;
+  color: #c9a3a3 !important;
+  box-shadow: none;
+}

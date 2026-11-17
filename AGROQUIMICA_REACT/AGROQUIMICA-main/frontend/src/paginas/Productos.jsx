@@ -246,7 +246,7 @@ function FormEgreso({ abierto, productos, onCerrar, onGuardar }) {
       pie={(
         <>
           <button type="button" className="btn btn-outline-secondary" onClick={onCerrar}>Cancelar</button>
-          <button type="submit" form="formEgreso" className="btn btn-success" disabled={isSubmitting || productos.length === 0}>
+          <button type="submit" form="formEgreso" className="btn av-btn-egreso" disabled={isSubmitting || productos.length === 0}>
             Registrar egreso
           </button>
         </>
@@ -408,7 +408,7 @@ function Productos() {
     <div>
       <Encabezado icono="caja" titulo="Gestión de productos" subtitulo="Catálogo, presentación, stock y lotes de cada producto.">
         {datos.puede_egresar && (
-          <button type="button" className="btn btn-outline-success d-inline-flex align-items-center gap-2" onClick={() => setEgreso(true)}>
+          <button type="button" className="btn av-btn-egreso d-inline-flex align-items-center gap-2" onClick={() => setEgreso(true)}>
             <Icono nombre="anular" /> Registrar egreso
           </button>
         )}
