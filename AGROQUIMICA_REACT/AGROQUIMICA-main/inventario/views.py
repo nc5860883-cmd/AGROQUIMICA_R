@@ -5911,6 +5911,9 @@ def detalle_auditoria(request, id_log):
         'entidad': log.Seccion,
         'registro': log.ID_Registro,
         'nombre_registro': _registro_sin_repetir(log),
+        # Cuenta (nombre de usuario) de quien hizo la acción: se muestra como
+        # registro en inicios/cierres de sesión y bloqueos.
+        'cuenta': log.ID_Usuario.Usuario if log.ID_Usuario else None,
         'accion': log.Accion,
         'modo': modo,
         'datos': [

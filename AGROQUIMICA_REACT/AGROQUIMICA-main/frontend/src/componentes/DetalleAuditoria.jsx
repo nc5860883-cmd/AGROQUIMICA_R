@@ -89,6 +89,18 @@ const SIN_DATOS = {
   CIERRE_SESION: 'El usuario salió del sistema cerrando su sesión.',
 }
 
+// Acciones cuyo registro afectado es la propia cuenta de quien la hizo
+const ACCIONES_DE_CUENTA = ['INICIO_SESION', 'CIERRE_SESION', 'BLOQUEO_INACTIVIDAD']
+
+// Nombre del registro afectado que se muestra en pantalla (nunca el ID).
+// En inicios/cierres de sesión y bloqueos es la cuenta del usuario (ej. "admin").
+// eslint-disable-next-line react-refresh/only-export-components
+export function registroVisible(nombre, accion, cuenta) {
+  if (nombre) return nombre
+  if (ACCIONES_DE_CUENTA.includes(accion) && cuenta) return cuenta
+  return null
+}
+
 // Campo de la base -> texto legible (ID_Tipo_producto -> "Tipo producto")
 function etiqueta(campo = '') {
   if (ETIQUETAS[campo]) return ETIQUETAS[campo]
@@ -244,7 +256,7 @@ function DetalleAuditoria({ detalle, textoAccion, onCerrar }) {
     <Modal
       abierto={Boolean(detalle)}
       titulo="Detalle del registro"
-      subtitulo={listo ? `Registro de auditoría N.º ${detalle.id}` : undefined}
+      subtitulo={listo ? 'Qué se hizo, quién lo hizo y cuándo' : undefined}
       icono="auditoria"
       onCerrar={onCerrar}
       tamano="modal-lg"
@@ -260,8 +272,12 @@ function DetalleAuditoria({ detalle, textoAccion, onCerrar }) {
           {/* Cabecera: acción con su color y registro afectado */}
           <header className={`ad-hero av-accion av-accion-${clase}`}>
             <span className={`badge rounded-pill av-accion av-accion-${clase}`}>{textoAccion(detalle.accion)}</span>
-            <h3 className="ad-hero-titulo">{detalle.nombre_registro || `Registro #${detalle.registro}`}</h3>
-            <span className="ad-hero-sub">{detalle.entidad}</span>
+            <h3 className="ad-hero-titulo">
+              {registroVisible(detalle.nombre_registro, detalle.accion, detalle.cuenta) || detalle.entidad}
+            </h3>
+            <span className="ad-hero-sub">
+              {ACCIONES_DE_CUENTA.includes(detalle.accion) ? `Cuenta de usuario · ${detalle.entidad}` : detalle.entidad}
+            </span>
           </header>
 
           {/* Quién, cuándo y dónde */}
@@ -283,11 +299,11 @@ function DetalleAuditoria({ detalle, textoAccion, onCerrar }) {
               </div>
             </div>
             <div className="ad-meta-item">
-              <span className="ad-meta-icono"><Icono nombre="etiqueta" /></span>
+              <span className="ad-meta-icono"><Icono nombre="capas" /></span>
               <div>
-                <span className="ad-meta-rotulo">Registro afectado</span>
-                <strong>ID {detalle.registro}</strong>
-                <span className="ad-meta-extra">{detalle.entidad}</span>
+                <span className="ad-meta-rotulo">Sección</span>
+                <strong>{detalle.entidad}</strong>
+                <span className="ad-meta-extra">Módulo del sistema</span>
               </div>
             </div>
           </div>

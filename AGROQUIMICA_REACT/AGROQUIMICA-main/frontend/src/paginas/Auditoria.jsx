@@ -9,7 +9,7 @@ import { usePantalla } from '../hooks/usePantalla'
 import { obtenerPantalla } from '../servicios/api'
 import Resumen from '../componentes/Resumen'
 import Paginacion from '../componentes/Paginacion'
-import DetalleAuditoria from '../componentes/DetalleAuditoria'
+import DetalleAuditoria, { registroVisible } from '../componentes/DetalleAuditoria'
 import { Encabezado, EstadoPantalla, Icono } from '../componentes/Comunes'
 import { fecha } from '../servicios/formato'
 
@@ -132,7 +132,7 @@ function Auditoria() {
                   <td>{r.ID_Usuario ? `${r.ID_Usuario.Apellido_usuario}, ${r.ID_Usuario.Nombre_usuario}` : 'Sistema'}</td>
                   <td>{r.ID_Usuario?.ID_Perfil?.Nombre_perfil || '—'}</td>
                   <td>{r.Seccion}</td>
-                  <td>{r.nombre_registro || `#${r.ID_Registro}`}</td>
+                  <td>{registroVisible(r.nombre_registro, r.Accion, r.ID_Usuario?.Usuario) || <span className="text-body-secondary">—</span>}</td>
                   <td><EtiquetaAccion accion={r.Accion} /></td>
                   <td className="text-center">
                     <button type="button" className="btn btn-outline-secondary av-btn-ico" title="Ver detalle" onClick={() => verDetalle(r.ID_Log)}>
